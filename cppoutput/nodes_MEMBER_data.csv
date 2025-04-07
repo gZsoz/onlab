@@ -1,0 +1,424 @@
+103079215104,MEMBER,<empty>,<empty>,mFindings,35,,<empty>,224,mFindings,,,9,,std.vector<ErrorMessage>
+103079215105,MEMBER,<empty>,<empty>,& mSettings,23,,<empty>,310,mSettings,,,8,,Settings&
+103079215106,MEMBER,<empty>,<empty>,mShownErrors,41,,<empty>,316,mShownErrors,,,9,,std.unordered_set<std.string>
+103079215107,MEMBER,<empty>,<empty>,mLatestProgressOutputTime{},21,,<empty>,321,mLatestProgressOutputTime,,,10,,std.time_t
+103079215108,MEMBER,<empty>,<empty>,* mErrorOutput{},22,,<empty>,326,mErrorOutput,,,11,,std.ofstream*
+103079215109,MEMBER,<empty>,<empty>,mActiveCheckers,31,,<empty>,331,mActiveCheckers,,,12,,std.set<std.string>
+103079215110,MEMBER,<empty>,<empty>,mCriticalErrors,21,,<empty>,336,mCriticalErrors,,,13,,std.string
+103079215111,MEMBER,<empty>,<empty>,mCtuInfo,21,,<empty>,341,mCtuInfo,,,14,,std.string
+103079215112,MEMBER,<empty>,<empty>,mSarifReport,21,,<empty>,346,mSarifReport,,,15,,SarifReport
+103079215113,MEMBER,<empty>,<empty>,mGuidelineMapping,44,,<empty>,351,mGuidelineMapping,,,16,,"std.map<std.string,std.string>"
+103079215114,MEMBER,<empty>,<empty>,REPORT_OUT='1',41,,<empty>,81,REPORT_OUT,,,1,,std.uint8_t
+103079215115,MEMBER,<empty>,<empty>,REPORT_ERROR='2',56,,<empty>,81,REPORT_ERROR,,,2,,std.uint8_t
+103079215116,MEMBER,<empty>,<empty>,REPORT_SUPPR_INLINE='3',73,,<empty>,81,REPORT_SUPPR_INLINE,,,3,,std.uint8_t
+103079215117,MEMBER,<empty>,<empty>,CHILD_END='5',97,,<empty>,81,CHILD_END,,,4,,std.uint8_t
+103079215118,MEMBER,<empty>,<empty>,mWpipe,19,,<empty>,152,mWpipe,,,10,,int
+103079215119,MEMBER,<empty>,<empty>,mReportSync,16,,<empty>,75,mReportSync,,,5,,std.mutex
+103079215120,MEMBER,<empty>,<empty>,&mThreadExecutor,20,,<empty>,76,mThreadExecutor,,,6,,ThreadExecutor&
+103079215121,MEMBER,<empty>,<empty>,&mErrorLogger,17,,<empty>,77,mErrorLogger,,,7,,ErrorLogger&
+103079215122,MEMBER,<empty>,<empty>,&mFiles,38,,<empty>,158,mFiles,,,5,,std.list<FileWithDetails>&
+103079215123,MEMBER,<empty>,<empty>,mItNextFile,48,,<empty>,159,mItNextFile,,,6,,std.list<FileWithDetails>.const_iterator
+103079215124,MEMBER,<empty>,<empty>,&mFileSettings,35,,<empty>,160,mFileSettings,,,7,,std.list<FileSettings>&
+103079215125,MEMBER,<empty>,<empty>,mItNextFileSettings,45,,<empty>,161,mItNextFileSettings,,,8,,std.list<FileSettings>.const_iterator
+103079215126,MEMBER,<empty>,<empty>,mProcessedFiles{},17,,<empty>,163,mProcessedFiles,,,9,,std.size_t
+103079215127,MEMBER,<empty>,<empty>,mTotalFiles{},17,,<empty>,164,mTotalFiles,,,10,,std.size_t
+103079215128,MEMBER,<empty>,<empty>,mProcessedSize{},17,,<empty>,165,mProcessedSize,,,11,,std.size_t
+103079215129,MEMBER,<empty>,<empty>,mTotalFileSize{},17,,<empty>,166,mTotalFileSize,,,12,,std.size_t
+103079215130,MEMBER,<empty>,<empty>,mFileSync,16,,<empty>,168,mFileSync,,,13,,std.mutex
+103079215131,MEMBER,<empty>,<empty>,&mSettings,20,,<empty>,169,mSettings,,,14,,Settings&
+103079215132,MEMBER,<empty>,<empty>,&mSuppressions,18,,<empty>,170,mSuppressions,,,15,,Suppressions&
+103079215133,MEMBER,<empty>,<empty>,mExecuteCommand,28,,<empty>,171,mExecuteCommand,,,16,,CppCheck.ExecuteCmdFn
+103079215134,MEMBER,<empty>,<empty>,logForwarder,22,,<empty>,174,logForwarder,,,17,,SyncLogForwarder
+103079215135,MEMBER,<empty>,<empty>,stoptime,23,,<empty>,59,stoptime,,,1,,std.time_t
+103079215136,MEMBER,<empty>,<empty>,supprs,18,,<empty>,60,supprs,,,2,,Suppressions
+103079215137,MEMBER,<empty>,<empty>,cppcheck,14,,<empty>,61,cppcheck,,,3,,CppCheck
+103079215138,MEMBER,<empty>,<empty>,bom,20,,<empty>,351,bom,,,8,,shortunsigned
+103079215139,MEMBER,<empty>,<empty>,isUtf16,10,,<empty>,353,isUtf16,,,9,,bool
+103079215140,MEMBER,<empty>,<empty>,&istr,18,,<empty>,379,istr,,,6,,std.istream&
+103079215141,MEMBER,<empty>,<empty>,*str,25,,<empty>,411,str,,,6,,unsigned char*
+103079215142,MEMBER,<empty>,<empty>,size,23,,<empty>,412,size,,,7,,std.size_t
+103079215143,MEMBER,<empty>,<empty>,pos,17,,<empty>,413,pos,,,8,,std.size_t
+103079215144,MEMBER,<empty>,<empty>,lastStatus,9,,<empty>,414,lastStatus,,,9,,int
+103079215145,MEMBER,<empty>,<empty>,*file,10,,<empty>,466,file,,,8,,FILE*
+103079215146,MEMBER,<empty>,<empty>,lastCh,9,,<empty>,467,lastCh,,,9,,int
+103079215147,MEMBER,<empty>,<empty>,lastStatus,9,,<empty>,468,lastStatus,,,10,,int
+103079215148,MEMBER,<empty>,<empty>,location,28,,<empty>,1650,location,,,2,,simplecpp.Location
+103079215149,MEMBER,<empty>,<empty>,what,31,,<empty>,1651,what,,,3,,std.string
+103079215150,MEMBER,<empty>,<empty>,*nameTokDef,21,,<empty>,2306,nameTokDef,,,28,,simplecpp.Token*
+103079215151,MEMBER,<empty>,<empty>,args,34,,<empty>,2309,args,,,29,,std.vector<TokenString>
+103079215152,MEMBER,<empty>,<empty>,*valueToken,21,,<empty>,2312,valueToken,,,30,,simplecpp.Token*
+103079215153,MEMBER,<empty>,<empty>,*endToken,21,,<empty>,2315,endToken,,,31,,simplecpp.Token*
+103079215154,MEMBER,<empty>,<empty>,&files,34,,<empty>,2318,files,,,32,,std.vector<std.string>&
+103079215155,MEMBER,<empty>,<empty>,tokenListDefine,19,,<empty>,2321,tokenListDefine,,,33,,simplecpp.TokenList
+103079215156,MEMBER,<empty>,<empty>,usageList,37,,<empty>,2324,usageList,,,34,,std.list<Location>
+103079215157,MEMBER,<empty>,<empty>,variadic,14,,<empty>,2327,variadic,,,35,,bool
+103079215158,MEMBER,<empty>,<empty>,valueDefinedInCode_,14,,<empty>,2330,valueDefinedInCode_,,,36,,bool
+103079215159,MEMBER,<empty>,<empty>,m_criticalSection,22,,<empty>,2395,m_criticalSection,,,4,,CRITICAL_SECTION
+103079215160,MEMBER,<empty>,<empty>,& m_mutex,6,,<empty>,2414,m_mutex,,,3,,T&
+103079215161,MEMBER,<empty>,<empty>,m_fileMap,40,,<empty>,2439,m_fileMap,,,4,,"std.map<std.string,std.string>"
+103079215162,MEMBER,<empty>,<empty>,m_mutex,13,,<empty>,2440,m_mutex,,,5,,MyMutex
+103079215163,MEMBER,<empty>,<empty>,m_pathSet,27,,<empty>,3076,m_pathSet,,,5,,std.set<std.string>
+103079215164,MEMBER,<empty>,<empty>,m_mutex,13,,<empty>,3077,m_mutex,,,6,,MyMutex
+103079215165,MEMBER,<empty>,<empty>,* pattern,15,,<empty>,142,pattern,,,1,,char*
+103079215166,MEMBER,<empty>,<empty>,length,9,,<empty>,143,length,,,2,,int
+103079215167,MEMBER,<empty>,<empty>,value,10,,<empty>,144,value,,,3,,char
+103079215168,MEMBER,<empty>,<empty>,*function,39,,<empty>,61,function,,,2,,CppcheckLibraryData.Function*
+103079215169,MEMBER,<empty>,<empty>,mTitle,13,,<empty>,37,mTitle,,,1,,QString
+103079215170,MEMBER,<empty>,<empty>,*mActMainWindow,13,,<empty>,39,mActMainWindow,,,3,,QAction*
+103079215171,MEMBER,<empty>,<empty>,mName,13,,<empty>,40,mName,,,1,,QString
+103079215172,MEMBER,<empty>,<empty>,mFilename,13,,<empty>,46,mFilename,,,2,,QString
+103079215173,MEMBER,<empty>,<empty>,mCode,13,,<empty>,52,mCode,,,3,,QString
+103079215174,MEMBER,<empty>,<empty>,ctu = false,10,,<empty>,32,ctu,,,6,,bool
+103079215175,MEMBER,<empty>,<empty>,action,16,,<empty>,141,action,,,2,,Action
+103079215176,MEMBER,<empty>,<empty>,terminate,19,,<empty>,142,terminate,,,3,,Terminate
+103079215177,MEMBER,<empty>,<empty>,= 0,65,,<empty>,165,,,,9,,const
+103079215178,MEMBER,<empty>,<empty>,= 0,74,,<empty>,179,,,,17,,const
+103079215179,MEMBER,<empty>,<empty>,= 0,40,,<empty>,181,,,,20,,const
+103079215180,MEMBER,<empty>,<empty>,= 0,62,,<empty>,183,,,,23,,const
+103079215181,MEMBER,<empty>,<empty>,& library,22,,<empty>,3094,library,,,1,,Library&
+103079215182,MEMBER,<empty>,<empty>,* evaluate,76,,<empty>,3095,evaluate,,,2,,std.function<std.vector<MathLib.bigint>(constToken*)>*
+103079215183,MEMBER,<empty>,<empty>,* token,16,,<empty>,252,token,,,3,,Token*
+103079215184,MEMBER,<empty>,<empty>,errors,15,,<empty>,253,errors,,,4,,ErrorPath
+103079215185,MEMBER,<empty>,<empty>,unsafeArrayIndex,47,,<empty>,900,unsafeArrayIndex,,,1,,std.list<CTU.FileInfo.UnsafeUsage>
+103079215186,MEMBER,<empty>,<empty>,unsafePointerArith,47,,<empty>,903,unsafePointerArith,,,2,,std.list<CTU.FileInfo.UnsafeUsage>
+103079215187,MEMBER,<empty>,<empty>,*var,24,,<empty>,2682,var,,,2,,Variable*
+103079215188,MEMBER,<empty>,<empty>,*tok,21,,<empty>,2683,tok,,,3,,Token*
+103079215189,MEMBER,<empty>,<empty>,initArgs,38,,<empty>,2684,initArgs,,,4,,std.vector<constVariable*>
+103079215190,MEMBER,<empty>,<empty>,* classVar,23,,<empty>,3013,classVar,,,2,,Variable*
+103079215191,MEMBER,<empty>,<empty>,* parentClassVar,23,,<empty>,3014,parentClassVar,,,3,,Variable*
+103079215192,MEMBER,<empty>,<empty>,* parentClass,29,,<empty>,3015,parentClass,,,4,,Type.BaseInfo*
+103079215193,MEMBER,<empty>,<empty>,* classFunc,23,,<empty>,3019,classFunc,,,2,,Function*
+103079215194,MEMBER,<empty>,<empty>,* parentClassFunc,23,,<empty>,3020,parentClassFunc,,,3,,Function*
+103079215195,MEMBER,<empty>,<empty>,* parentClass,29,,<empty>,3021,parentClass,,,4,,Type.BaseInfo*
+103079215196,MEMBER,<empty>,<empty>,NO,5,,<empty>,3125,NO,,,1,,std.uint8_t
+103079215197,MEMBER,<empty>,<empty>,WITHOUT_BODY,5,,<empty>,3126,WITHOUT_BODY,,,2,,std.uint8_t
+103079215198,MEMBER,<empty>,<empty>,WITH_BODY,5,,<empty>,3127,WITH_BODY,,,3,,std.uint8_t
+103079215199,MEMBER,<empty>,<empty>,className,25,,<empty>,3572,className,,,1,,std.string
+103079215200,MEMBER,<empty>,<empty>,fileName,25,,<empty>,3573,fileName,,,2,,std.string
+103079215201,MEMBER,<empty>,<empty>,lineNumber,17,,<empty>,3574,lineNumber,,,3,,int
+103079215202,MEMBER,<empty>,<empty>,column,17,,<empty>,3575,column,,,4,,int
+103079215203,MEMBER,<empty>,<empty>,hash,25,,<empty>,3576,hash,,,5,,std.size_t
+103079215204,MEMBER,<empty>,<empty>,classDefinitions,30,,<empty>,3584,classDefinitions,,,2,,std.vector<NameLoc>
+103079215205,MEMBER,<empty>,<empty>,CLOSED,38,,<empty>,99,CLOSED,,,1,,std.uint8_t
+103079215206,MEMBER,<empty>,<empty>,READ_MODE,46,,<empty>,99,READ_MODE,,,2,,std.uint8_t
+103079215207,MEMBER,<empty>,<empty>,WRITE_MODE,57,,<empty>,99,WRITE_MODE,,,3,,std.uint8_t
+103079215208,MEMBER,<empty>,<empty>,RW_MODE,69,,<empty>,99,RW_MODE,,,4,,std.uint8_t
+103079215209,MEMBER,<empty>,<empty>,UNKNOWN_OM,78,,<empty>,99,UNKNOWN_OM,,,5,,std.uint8_t
+103079215210,MEMBER,<empty>,<empty>,NONE,46,,<empty>,115,NONE,,,1,,std.uint8_t
+103079215211,MEMBER,<empty>,<empty>,UNIMPORTANT,52,,<empty>,115,UNIMPORTANT,,,2,,std.uint8_t
+103079215212,MEMBER,<empty>,<empty>,READ,65,,<empty>,115,READ,,,3,,std.uint8_t
+103079215213,MEMBER,<empty>,<empty>,WRITE,71,,<empty>,115,WRITE,,,4,,std.uint8_t
+103079215214,MEMBER,<empty>,<empty>,POSITIONING,78,,<empty>,115,POSITIONING,,,5,,std.uint8_t
+103079215215,MEMBER,<empty>,<empty>,OPEN,91,,<empty>,115,OPEN,,,6,,std.uint8_t
+103079215216,MEMBER,<empty>,<empty>,CLOSE,97,,<empty>,115,CLOSE,,,7,,std.uint8_t
+103079215217,MEMBER,<empty>,<empty>,UNKNOWN_OP,104,,<empty>,115,UNKNOWN_OP,,,8,,std.uint8_t
+103079215218,MEMBER,<empty>,<empty>,lastOperation = Operation::NONE,116,,<empty>,115,lastOperation,,,1,,Operation
+103079215219,MEMBER,<empty>,<empty>,UNKNOWN_AM,48,,<empty>,117,UNKNOWN_AM,,,1,,std.uint8_t
+103079215220,MEMBER,<empty>,<empty>,APPEND,60,,<empty>,117,APPEND,,,2,,std.uint8_t
+103079215221,MEMBER,<empty>,<empty>,APPEND_EX,68,,<empty>,117,APPEND_EX,,,3,,std.uint8_t
+103079215222,MEMBER,<empty>,<empty>,mode,18,,<empty>,113,mode,,,1,,OpenMode
+103079215223,MEMBER,<empty>,<empty>,mode_indent{},20,,<empty>,114,mode_indent,,,2,,int
+103079215224,MEMBER,<empty>,<empty>,op_indent{},20,,<empty>,116,op_indent,,,4,,int
+103079215225,MEMBER,<empty>,<empty>,append_mode = AppendMode::UNKNOWN_AM,20,,<empty>,118,append_mode,,,6,,Filepointer.AppendMode
+103079215226,MEMBER,<empty>,<empty>,filename,21,,<empty>,119,filename,,,7,,std.string
+103079215227,MEMBER,<empty>,<empty>,unsafeUsage,47,,<empty>,613,unsafeUsage,,,1,,std.list<CTU.FileInfo.UnsafeUsage>
+103079215228,MEMBER,<empty>,<empty>,* tok,20,,<empty>,818,tok,,,1,,Token*
+103079215229,MEMBER,<empty>,<empty>,* info,52,,<empty>,819,info,,,2,,Library.ArgumentChecks.IteratorInfo*
+103079215230,MEMBER,<empty>,<empty>,* tok,28,,<empty>,979,tok,,,1,,Token*
+103079215231,MEMBER,<empty>,<empty>,errorPath,27,,<empty>,980,errorPath,,,2,,ErrorPath
+103079215232,MEMBER,<empty>,<empty>,* ftok,28,,<empty>,981,ftok,,,3,,Token*
+103079215233,MEMBER,<empty>,<empty>,expressions,48,,<empty>,983,expressions,,,2,,"std.unordered_map<int,Reference>"
+103079215234,MEMBER,<empty>,<empty>,invalidMethods,51,,<empty>,1002,invalidMethods,,,2,,"std.unordered_map<constFunction*,Info>"
+103079215235,MEMBER,<empty>,<empty>,OTHER,38,,<empty>,2602,OTHER,,,1,,std.uint8_t
+103079215236,MEMBER,<empty>,<empty>,RANGE,45,,<empty>,2602,RANGE,,,2,,std.uint8_t
+103079215237,MEMBER,<empty>,<empty>,ITERATOR,52,,<empty>,2602,ITERATOR,,,3,,std.uint8_t
+103079215238,MEMBER,<empty>,<empty>,INDEX,62,,<empty>,2602,INDEX,,,4,,std.uint8_t
+103079215239,MEMBER,<empty>,<empty>,* bodyTok = nullptr,20,,<empty>,2822,bodyTok,,,1,,Token*
+103079215240,MEMBER,<empty>,<empty>,* loopVar = nullptr,20,,<empty>,2823,loopVar,,,2,,Token*
+103079215241,MEMBER,<empty>,<empty>,* settings = nullptr,23,,<empty>,2824,settings,,,3,,Settings*
+103079215242,MEMBER,<empty>,<empty>,varsChanged,30,,<empty>,2825,varsChanged,,,4,,std.set<int>
+103079215243,MEMBER,<empty>,<empty>,unsafeUsage,47,,<empty>,1715,unsafeUsage,,,1,,std.list<CTU.FileInfo.UnsafeUsage>
+103079215244,MEMBER,<empty>,<empty>,fileName,21,,<empty>,442,fileName,,,3,,std.string
+103079215245,MEMBER,<empty>,<empty>,lineNumber,13,,<empty>,443,lineNumber,,,4,,int
+103079215246,MEMBER,<empty>,<empty>,standard,40,,<empty>,105,standard,,,1,,std.uint8_t
+103079215247,MEMBER,<empty>,<empty>,array,50,,<empty>,105,array,,,2,,std.uint8_t
+103079215248,MEMBER,<empty>,<empty>,pointer,57,,<empty>,105,pointer,,,3,,std.uint8_t
+103079215249,MEMBER,<empty>,<empty>,reference,66,,<empty>,105,reference,,,4,,std.uint8_t
+103079215250,MEMBER,<empty>,<empty>,pointerArray,77,,<empty>,105,pointerArray,,,5,,std.uint8_t
+103079215251,MEMBER,<empty>,<empty>,referenceArray,91,,<empty>,105,referenceArray,,,6,,std.uint8_t
+103079215252,MEMBER,<empty>,<empty>,pointerPointer,107,,<empty>,105,pointerPointer,,,7,,std.uint8_t
+103079215253,MEMBER,<empty>,<empty>,none,123,,<empty>,105,none,,,8,,std.uint8_t
+103079215254,MEMBER,<empty>,<empty>,_aliases,30,,<empty>,135,_aliases,,,4,,std.set<int>
+103079215255,MEMBER,<empty>,<empty>,_assignments,32,,<empty>,136,_assignments,,,5,,std.set<constScope*>
+103079215256,MEMBER,<empty>,<empty>,* _var,23,,<empty>,138,_var,,,6,,Variable*
+103079215257,MEMBER,<empty>,<empty>,* _lastAccess,20,,<empty>,139,_lastAccess,,,7,,Token*
+103079215258,MEMBER,<empty>,<empty>,mType,22,,<empty>,140,mType,,,8,,Variables.VariableType
+103079215259,MEMBER,<empty>,<empty>,_read,14,,<empty>,141,_read,,,9,,bool
+103079215260,MEMBER,<empty>,<empty>,_write,14,,<empty>,142,_write,,,10,,bool
+103079215261,MEMBER,<empty>,<empty>,_modified,14,,<empty>,143,_modified,,,11,,bool
+103079215262,MEMBER,<empty>,<empty>,_allocateMemory,14,,<empty>,144,_allocateMemory,,,12,,bool
+103079215263,MEMBER,<empty>,<empty>,mVarUsage,41,,<empty>,174,mVarUsage,,,6,,"std.map<int,VariableUsage>"
+103079215264,MEMBER,<empty>,<empty>,* def{},18,,<empty>,223,def,,,6,,Token*
+103079215265,MEMBER,<empty>,<empty>,* enumerator{},23,,<empty>,224,enumerator,,,7,,Enumerator*
+103079215266,MEMBER,<empty>,<empty>,* function{},21,,<empty>,225,function,,,8,,Function*
+103079215267,MEMBER,<empty>,<empty>,* scope{},18,,<empty>,226,scope,,,9,,Scope*
+103079215268,MEMBER,<empty>,<empty>,* var{},21,,<empty>,227,var,,,10,,Variable*
+103079215269,MEMBER,<empty>,<empty>,*mSettings = nullptr,24,,<empty>,230,mSettings,,,2,,Settings*
+103079215270,MEMBER,<empty>,<empty>,*mSymbolDatabase = nullptr,24,,<empty>,231,mSymbolDatabase,,,3,,SymbolDatabase*
+103079215271,MEMBER,<empty>,<empty>,enumValue = 0,13,,<empty>,233,enumValue,,,4,,int
+103079215272,MEMBER,<empty>,<empty>,mNotScope,27,,<empty>,300,mNotScope,,,14,,std.set<Token*>
+103079215273,MEMBER,<empty>,<empty>,scopeAccessControl,48,,<empty>,302,scopeAccessControl,,,15,,"std.map<constScope*,AccessControl>"
+103079215274,MEMBER,<empty>,<empty>,mDeclMap,37,,<empty>,313,mDeclMap,,,17,,"std.map<std.string,Decl>"
+103079215275,MEMBER,<empty>,<empty>,mNotFound,53,,<empty>,314,mNotFound,,,18,,"std.map<std.string,std.vector<Token*>>"
+103079215276,MEMBER,<empty>,<empty>,mVarId = 0,13,,<empty>,315,mVarId,,,19,,int
+103079215277,MEMBER,<empty>,<empty>,nodeType,21,,<empty>,326,nodeType,,,2,,std.string
+103079215278,MEMBER,<empty>,<empty>,children,33,,<empty>,327,children,,,3,,std.vector<AstNodePtr>
+103079215279,MEMBER,<empty>,<empty>,mFile  = 0,13,,<empty>,377,mFile,,,6,,int
+103079215280,MEMBER,<empty>,<empty>,mLine  = 1,13,,<empty>,378,mLine,,,7,,int
+103079215281,MEMBER,<empty>,<empty>,mCol   = 1,13,,<empty>,379,mCol,,,8,,int
+103079215282,MEMBER,<empty>,<empty>,mExtTokens,34,,<empty>,380,mExtTokens,,,9,,std.vector<std.string>
+103079215283,MEMBER,<empty>,<empty>,*mData,14,,<empty>,381,mData,,,10,,clangimport.Data*
+103079215284,MEMBER,<empty>,<empty>,&mErrorLogger,17,,<empty>,265,mErrorLogger,,,14,,ErrorLogger&
+103079215285,MEMBER,<empty>,<empty>,& mSettings,19,,<empty>,266,mSettings,,,15,,Settings&
+103079215286,MEMBER,<empty>,<empty>,& mSuppressions,17,,<empty>,267,mSuppressions,,,16,,Suppressions&
+103079215287,MEMBER,<empty>,<empty>,mUseGlobalSuppressions,10,,<empty>,268,mUseGlobalSuppressions,,,17,,bool
+103079215288,MEMBER,<empty>,<empty>,mErrorList,37,,<empty>,271,mErrorList,,,18,,std.unordered_set<std.string>
+103079215289,MEMBER,<empty>,<empty>,mRemarkComments,32,,<empty>,273,mRemarkComments,,,19,,std.vector<RemarkComment>
+103079215290,MEMBER,<empty>,<empty>,mLocationMacros,47,,<empty>,276,mLocationMacros,,,21,,"std.map<Location,std.set<std.string>>"
+103079215291,MEMBER,<empty>,<empty>,mPlistFile,19,,<empty>,278,mPlistFile,,,22,,std.ofstream
+103079215292,MEMBER,<empty>,<empty>,mExitCode{},18,,<empty>,280,mExitCode,,,23,,unsigned int
+103079215293,MEMBER,<empty>,<empty>,* mAnalyzerInformation{},24,,<empty>,282,mAnalyzerInformation,,,24,,AnalyzerInformation*
+103079215294,MEMBER,<empty>,<empty>,mFilenames,34,,<empty>,299,mFilenames,,,4,,std.vector<std.string>
+103079215295,MEMBER,<empty>,<empty>,*token,17,,<empty>,43,token,,,4,,Token*
+103079215296,MEMBER,<empty>,<empty>,type,10,,<empty>,46,type,,,7,,Type
+103079215297,MEMBER,<empty>,<empty>,id,20,,<empty>,127,id,,,3,,shortunsigned
+103079215298,MEMBER,<empty>,<empty>,file,21,,<empty>,92,file,,,4,,FileWithDetails
+103079215299,MEMBER,<empty>,<empty>,Continue,46,,<empty>,49,Continue,,,1,,std.uint8_t
+103079215300,MEMBER,<empty>,<empty>,Break,56,,<empty>,49,Break,,,2,,std.uint8_t
+103079215301,MEMBER,<empty>,<empty>,Skip,63,,<empty>,49,Skip,,,3,,std.uint8_t
+103079215302,MEMBER,<empty>,<empty>,* endBlock = nullptr,18,,<empty>,72,endBlock,,,2,,Token*
+103079215303,MEMBER,<empty>,<empty>,action = Analyzer::Action::None,30,,<empty>,73,action,,,3,,Analyzer.Action
+103079215304,MEMBER,<empty>,<empty>,check = false,18,,<empty>,74,check,,,4,,bool
+103079215305,MEMBER,<empty>,<empty>,escape = false,18,,<empty>,75,escape,,,5,,bool
+103079215306,MEMBER,<empty>,<empty>,escapeUnknown = false,18,,<empty>,76,escapeUnknown,,,6,,bool
+103079215307,MEMBER,<empty>,<empty>,active = false,18,,<empty>,77,active,,,7,,bool
+103079215308,MEMBER,<empty>,<empty>,analyzer,28,,<empty>,53,analyzer,,,3,,ValuePtr<Analyzer>
+103079215309,MEMBER,<empty>,<empty>,& tokenList,24,,<empty>,54,tokenList,,,4,,TokenList&
+103079215310,MEMBER,<empty>,<empty>,& errorLogger,20,,<empty>,55,errorLogger,,,5,,ErrorLogger&
+103079215311,MEMBER,<empty>,<empty>,& settings,23,,<empty>,56,settings,,,6,,Settings&
+103079215312,MEMBER,<empty>,<empty>,actions,26,,<empty>,57,actions,,,7,,Analyzer.Action
+103079215313,MEMBER,<empty>,<empty>,analyzeOnly{},14,,<empty>,58,analyzeOnly,,,8,,bool
+103079215314,MEMBER,<empty>,<empty>,analyzeTerminate{},14,,<empty>,59,analyzeTerminate,,,9,,bool
+103079215315,MEMBER,<empty>,<empty>,terminate = Analyzer::Terminate::None,29,,<empty>,60,terminate,,,10,,Analyzer.Terminate
+103079215316,MEMBER,<empty>,<empty>,loopEnds,29,,<empty>,61,loopEnds,,,11,,std.vector<Token*>
+103079215317,MEMBER,<empty>,<empty>,branchCount = 0,13,,<empty>,62,branchCount,,,12,,int
+103079215318,MEMBER,<empty>,<empty>,Win32,31,,<empty>,509,Win32,,,1,,std.uint8_t
+103079215319,MEMBER,<empty>,<empty>,x64,38,,<empty>,509,x64,,,2,,std.uint8_t
+103079215320,MEMBER,<empty>,<empty>,Unknown,43,,<empty>,509,Unknown,,,3,,std.uint8_t
+103079215321,MEMBER,<empty>,<empty>,platform = Unknown,53,,<empty>,509,platform,,,1,,enum
+103079215322,MEMBER,<empty>,<empty>,name,21,,<empty>,507,name,,,2,,std.string
+103079215323,MEMBER,<empty>,<empty>,configuration,21,,<empty>,508,configuration,,,3,,std.string
+103079215324,MEMBER,<empty>,<empty>,platformStr,21,,<empty>,510,platformStr,,,5,,std.string
+103079215325,MEMBER,<empty>,<empty>,condition,21,,<empty>,609,condition,,,4,,std.string
+103079215326,MEMBER,<empty>,<empty>,enhancedInstructionSet,21,,<empty>,610,enhancedInstructionSet,,,5,,std.string
+103079215327,MEMBER,<empty>,<empty>,preprocessorDefinitions,21,,<empty>,611,preprocessorDefinitions,,,6,,std.string
+103079215328,MEMBER,<empty>,<empty>,additionalIncludePaths,21,,<empty>,612,additionalIncludePaths,,,7,,std.string
+103079215329,MEMBER,<empty>,<empty>,entryPointSymbol,21,,<empty>,613,entryPointSymbol,,,8,,std.string
+103079215330,MEMBER,<empty>,<empty>,cppstd = Standards::CPPLatest,29,,<empty>,614,cppstd,,,9,,Standards.cppstd_t
+103079215331,MEMBER,<empty>,<empty>,minvalue,38,,<empty>,53,minvalue,,,1,,std.vector<MathLib.bigint>
+103079215332,MEMBER,<empty>,<empty>,maxvalue,48,,<empty>,53,maxvalue,,,2,,std.vector<MathLib.bigint>
+103079215333,MEMBER,<empty>,<empty>,minRef,46,,<empty>,54,minRef,,,3,,std.vector<constValueFlow.Value*>
+103079215334,MEMBER,<empty>,<empty>,maxRef,54,,<empty>,54,maxRef,,,4,,std.vector<constValueFlow.Value*>
+103079215335,MEMBER,<empty>,<empty>,mPlatformTypes,45,,<empty>,52,mPlatformTypes,,,2,,"std.map<std.string,PlatformType>"
+103079215336,MEMBER,<empty>,<empty>,mPrefixes,31,,<empty>,71,mPrefixes,,,5,,std.set<std.string>
+103079215337,MEMBER,<empty>,<empty>,mSuffixes,31,,<empty>,72,mSuffixes,,,6,,std.set<std.string>
+103079215338,MEMBER,<empty>,<empty>,mStart,21,,<empty>,105,mStart,,,10,,std.string
+103079215339,MEMBER,<empty>,<empty>,mEnd,21,,<empty>,106,mEnd,,,11,,std.string
+103079215340,MEMBER,<empty>,<empty>,mOffset{},13,,<empty>,107,mOffset,,,12,,int
+103079215341,MEMBER,<empty>,<empty>,mBlocks,31,,<empty>,108,mBlocks,,,13,,std.set<std.string>
+103079215342,MEMBER,<empty>,<empty>,False,48,,<empty>,111,False,,,1,,std.uint8_t
+103079215343,MEMBER,<empty>,<empty>,True,55,,<empty>,111,True,,,2,,std.uint8_t
+103079215344,MEMBER,<empty>,<empty>,Maybe,61,,<empty>,111,Maybe,,,3,,std.uint8_t
+103079215345,MEMBER,<empty>,<empty>,mFunctionwarn,37,,<empty>,113,mFunctionwarn,,,5,,"std.map<std.string,WarnInfo>"
+103079215346,MEMBER,<empty>,<empty>,mDefines,27,,<empty>,114,mDefines,,,6,,std.set<std.string>
+103079215347,MEMBER,<empty>,<empty>,mContainers,48,,<empty>,116,mContainers,,,7,,"std.unordered_map<std.string,Container>"
+103079215348,MEMBER,<empty>,<empty>,mFunctions,47,,<empty>,117,mFunctions,,,8,,"std.unordered_map<std.string,Function>"
+103079215349,MEMBER,<empty>,<empty>,mSmartPointers,51,,<empty>,118,mSmartPointers,,,9,,"std.unordered_map<std.string,SmartPointer>"
+103079215350,MEMBER,<empty>,<empty>,mAllocId{},9,,<empty>,120,mAllocId,,,10,,int
+103079215351,MEMBER,<empty>,<empty>,mFiles,27,,<empty>,121,mFiles,,,11,,std.set<std.string>
+103079215352,MEMBER,<empty>,<empty>,mAlloc,38,,<empty>,122,mAlloc,,,12,,"std.map<std.string,AllocFunc>"
+103079215353,MEMBER,<empty>,<empty>,mDealloc,38,,<empty>,123,mDealloc,,,13,,"std.map<std.string,AllocFunc>"
+103079215354,MEMBER,<empty>,<empty>,mRealloc,38,,<empty>,124,mRealloc,,,14,,"std.map<std.string,AllocFunc>"
+103079215355,MEMBER,<empty>,<empty>,mNoReturn,53,,<empty>,125,mNoReturn,,,15,,"std.unordered_map<std.string,FalseTrueMaybe>"
+103079215356,MEMBER,<empty>,<empty>,mReturnValue,40,,<empty>,126,mReturnValue,,,16,,"std.map<std.string,std.string>"
+103079215357,MEMBER,<empty>,<empty>,mReturnValueType,40,,<empty>,127,mReturnValueType,,,17,,"std.map<std.string,std.string>"
+103079215358,MEMBER,<empty>,<empty>,mReturnValueContainer,32,,<empty>,128,mReturnValueContainer,,,18,,"std.map<std.string,int>"
+103079215359,MEMBER,<empty>,<empty>,mUnknownReturnValues,57,,<empty>,129,mUnknownReturnValues,,,19,,"std.map<std.string,std.vector<MathLib.bigint>>"
+103079215360,MEMBER,<empty>,<empty>,mReportErrors,33,,<empty>,130,mReportErrors,,,20,,"std.map<std.string,bool>"
+103079215361,MEMBER,<empty>,<empty>,mProcessAfterCode,33,,<empty>,131,mProcessAfterCode,,,21,,"std.map<std.string,bool>"
+103079215362,MEMBER,<empty>,<empty>,mMarkupExtensions,27,,<empty>,132,mMarkupExtensions,,,22,,std.set<std.string>
+103079215363,MEMBER,<empty>,<empty>,mKeywords,50,,<empty>,133,mKeywords,,,23,,"std.map<std.string,std.set<std.string>>"
+103079215364,MEMBER,<empty>,<empty>,mExecutableBlocks,48,,<empty>,134,mExecutableBlocks,,,24,,"std.unordered_map<std.string,CodeBlock>"
+103079215365,MEMBER,<empty>,<empty>,mExporters,46,,<empty>,135,mExporters,,,25,,"std.map<std.string,ExportedFunctions>"
+103079215366,MEMBER,<empty>,<empty>,mImporters,50,,<empty>,136,mImporters,,,26,,"std.map<std.string,std.set<std.string>>"
+103079215367,MEMBER,<empty>,<empty>,mReflection,32,,<empty>,137,mReflection,,,27,,"std.map<std.string,int>"
+103079215368,MEMBER,<empty>,<empty>,mPodTypes,53,,<empty>,138,mPodTypes,,,28,,"std.unordered_map<std.string,structPodType>"
+103079215369,MEMBER,<empty>,<empty>,mPlatformTypes,41,,<empty>,139,mPlatformTypes,,,29,,"std.map<std.string,PlatformType>"
+103079215370,MEMBER,<empty>,<empty>,mPlatforms,37,,<empty>,140,mPlatforms,,,30,,"std.map<std.string,Platform>"
+103079215371,MEMBER,<empty>,<empty>,mTypeChecks,61,,<empty>,141,mTypeChecks,,,31,,"std.map<std.pair<std.string,std.string>,TypeCheck>"
+103079215372,MEMBER,<empty>,<empty>,mNonOverlappingData,57,,<empty>,142,mNonOverlappingData,,,32,,"std.unordered_map<std.string,NonOverlappingData>"
+103079215373,MEMBER,<empty>,<empty>,mEntrypoints,37,,<empty>,143,mEntrypoints,,,33,,std.unordered_set<std.string>
+103079215374,MEMBER,<empty>,<empty>,* tok,20,,<empty>,45,tok,,,1,,Token*
+103079215375,MEMBER,<empty>,<empty>,errorPath,19,,<empty>,46,errorPath,,,2,,ErrorPath
+103079215376,MEMBER,<empty>,<empty>,known,14,,<empty>,47,known,,,3,,bool
+103079215377,MEMBER,<empty>,<empty>,* start,17,,<empty>,41,start,,,3,,Token*
+103079215378,MEMBER,<empty>,<empty>,* library,19,,<empty>,42,library,,,4,,Library*
+103079215379,MEMBER,<empty>,<empty>,file,21,,<empty>,78,file,,,2,,std.string
+103079215380,MEMBER,<empty>,<empty>,line,13,,<empty>,79,line,,,3,,int
+103079215381,MEMBER,<empty>,<empty>,errmsg,21,,<empty>,80,errmsg,,,4,,std.string
+103079215382,MEMBER,<empty>,<empty>,line,13,,<empty>,63,line,,,2,,int
+103079215383,MEMBER,<empty>,<empty>,column,13,,<empty>,64,column,,,3,,int
+103079215384,MEMBER,<empty>,<empty>,linenr,18,,<empty>,56,linenr,,,2,,unsigned int
+103079215385,MEMBER,<empty>,<empty>,* pm,22,,<empty>,1237,pm,,,1,,ProgramMemory*
+103079215386,MEMBER,<empty>,<empty>,& settings,23,,<empty>,1238,settings,,,2,,Settings&
+103079215387,MEMBER,<empty>,<empty>,fdepth = 4,13,,<empty>,1239,fdepth,,,3,,int
+103079215388,MEMBER,<empty>,<empty>,depth = 10,13,,<empty>,1240,depth,,,4,,int
+103079215389,MEMBER,<empty>,<empty>,* tok = nullptr,16,,<empty>,41,tok,,,1,,Token*
+103079215390,MEMBER,<empty>,<empty>,exprid = 0,16,,<empty>,42,exprid,,,2,,int
+103079215391,MEMBER,<empty>,<empty>,,,,<empty>,,,,,7,,const
+103079215392,MEMBER,<empty>,<empty>,,,,<empty>,,,,,19,,const
+103079215393,MEMBER,<empty>,<empty>,state,19,,<empty>,158,state,,,1,,ProgramMemory
+103079215394,MEMBER,<empty>,<empty>,analyzer,28,,<empty>,43,analyzer,,,2,,ValuePtr<Analyzer>
+103079215395,MEMBER,<empty>,<empty>,& tokenlist,24,,<empty>,44,tokenlist,,,3,,TokenList&
+103079215396,MEMBER,<empty>,<empty>,& errorLogger,20,,<empty>,45,errorLogger,,,4,,ErrorLogger&
+103079215397,MEMBER,<empty>,<empty>,& settings,23,,<empty>,46,settings,,,5,,Settings&
+103079215398,MEMBER,<empty>,<empty>,"* m_file_name = """"",15,,<empty>,81,m_file_name,,,5,,char*
+103079215399,MEMBER,<empty>,<empty>,"* m_function_name = """"",15,,<empty>,82,m_function_name,,,6,,char*
+103079215400,MEMBER,<empty>,<empty>,= CLatest,77,,<empty>,41,,,,3,,c
+103079215401,MEMBER,<empty>,<empty>,= CPPLatest,109,,<empty>,44,,,,5,,cpp
+103079215402,MEMBER,<empty>,<empty>,nomsg,21,,<empty>,291,nomsg,,,1,,SuppressionList
+103079215403,MEMBER,<empty>,<empty>,nofail,21,,<empty>,293,nofail,,,2,,SuppressionList
+103079215404,MEMBER,<empty>,<empty>,parentOp,21,,<empty>,1572,parentOp,,,1,,std.string
+103079215405,MEMBER,<empty>,<empty>,operand1,20,,<empty>,1573,operand1,,,2,,int
+103079215406,MEMBER,<empty>,<empty>,operand2,20,,<empty>,1574,operand2,,,3,,int
+103079215407,MEMBER,<empty>,<empty>,known = true,10,,<empty>,69,known,,,3,,bool
+103079215408,MEMBER,<empty>,<empty>,* scope,17,,<empty>,164,scope,,,3,,Scope*
+103079215409,MEMBER,<empty>,<empty>,* const mToken,21,,<empty>,74,mToken,,,3,,Token*
+103079215410,MEMBER,<empty>,<empty>,mName,27,,<empty>,84,mName,,,3,,std.string
+103079215411,MEMBER,<empty>,<empty>,mFullName,27,,<empty>,94,mFullName,,,3,,std.string
+103079215412,MEMBER,<empty>,<empty>,* token,10,,<empty>,1627,token,,,2,,Token*
+103079215413,MEMBER,<empty>,<empty>,scope,17,,<empty>,1628,scope,,,3,,std.string
+103079215414,MEMBER,<empty>,<empty>,*mFunction,24,,<empty>,94,mFunction,,,1,,Function*
+103079215415,MEMBER,<empty>,<empty>,*mVariable,24,,<empty>,95,mVariable,,,2,,Variable*
+103079215416,MEMBER,<empty>,<empty>,*mEnumerator,26,,<empty>,97,mEnumerator,,,4,,Enumerator*
+103079215417,MEMBER,<empty>,<empty>,= LOW,53,,<empty>,121,,,,2,,type
+103079215418,MEMBER,<empty>,<empty>,isExecutable{},20,,<empty>,73,isExecutable,,,3,,bool
+103079215419,MEMBER,<empty>,<empty>,isStructInit{},20,,<empty>,74,isStructInit,,,4,,bool
+103079215420,MEMBER,<empty>,<empty>,isEnum{},20,,<empty>,75,isEnum,,,5,,bool
+103079215421,MEMBER,<empty>,<empty>,startVarid{},26,,<empty>,76,startVarid,,,6,,int
+103079215422,MEMBER,<empty>,<empty>,className,21,,<empty>,356,className,,,1,,std.string
+103079215423,MEMBER,<empty>,<empty>,* bodyEnd{},20,,<empty>,357,bodyEnd,,,2,,Token*
+103079215424,MEMBER,<empty>,<empty>,* bodyEnd2{},20,,<empty>,358,bodyEnd2,,,3,,Token*
+103079215425,MEMBER,<empty>,<empty>,isNamespace{},14,,<empty>,359,isNamespace,,,4,,bool
+103079215426,MEMBER,<empty>,<empty>,recordTypes,31,,<empty>,360,recordTypes,,,5,,std.set<std.string>
+103079215427,MEMBER,<empty>,<empty>,* mTypedefToken,14,,<empty>,575,mTypedefToken,,,1,,Token*
+103079215428,MEMBER,<empty>,<empty>,* mEndToken{nullptr},14,,<empty>,576,mEndToken,,,2,,Token*
+103079215429,MEMBER,<empty>,<empty>,mRangeType,35,,<empty>,577,mRangeType,,,3,,"std.pair<Token*,Token*>"
+103079215430,MEMBER,<empty>,<empty>,mRangeTypeQualifiers,35,,<empty>,578,mRangeTypeQualifiers,,,4,,"std.pair<Token*,Token*>"
+103079215431,MEMBER,<empty>,<empty>,mRangeAfterVar,35,,<empty>,579,mRangeAfterVar,,,5,,"std.pair<Token*,Token*>"
+103079215432,MEMBER,<empty>,<empty>,* mNameToken{nullptr},14,,<empty>,580,mNameToken,,,6,,Token*
+103079215433,MEMBER,<empty>,<empty>,mFail = false,14,,<empty>,581,mFail,,,7,,bool
+103079215434,MEMBER,<empty>,<empty>,mReplaceFailed = false,14,,<empty>,582,mReplaceFailed,,,8,,bool
+103079215435,MEMBER,<empty>,<empty>,mUsed = false,14,,<empty>,583,mUsed,,,9,,bool
+103079215436,MEMBER,<empty>,<empty>,Global,36,,<empty>,2382,Global,,,1,,std.uint8_t
+103079215437,MEMBER,<empty>,<empty>,Namespace,44,,<empty>,2382,Namespace,,,2,,std.uint8_t
+103079215438,MEMBER,<empty>,<empty>,Record,55,,<empty>,2382,Record,,,3,,std.uint8_t
+103079215439,MEMBER,<empty>,<empty>,MemberFunction,63,,<empty>,2382,MemberFunction,,,4,,std.uint8_t
+103079215440,MEMBER,<empty>,<empty>,Other,79,,<empty>,2382,Other,,,5,,std.uint8_t
+103079215441,MEMBER,<empty>,<empty>,*parent,20,,<empty>,2397,parent,,,4,,ScopeInfo3*
+103079215442,MEMBER,<empty>,<empty>,children,31,,<empty>,2398,children,,,5,,std.list<ScopeInfo3>
+103079215443,MEMBER,<empty>,<empty>,type,14,,<empty>,2399,type,,,6,,ScopeInfo3.Type
+103079215444,MEMBER,<empty>,<empty>,fullName,21,,<empty>,2400,fullName,,,7,,std.string
+103079215445,MEMBER,<empty>,<empty>,name,21,,<empty>,2401,name,,,8,,std.string
+103079215446,MEMBER,<empty>,<empty>,* bodyStart,21,,<empty>,2402,bodyStart,,,9,,Token*
+103079215447,MEMBER,<empty>,<empty>,* bodyEnd,21,,<empty>,2403,bodyEnd,,,10,,Token*
+103079215448,MEMBER,<empty>,<empty>,usingNamespaces,31,,<empty>,2404,usingNamespaces,,,11,,std.set<std.string>
+103079215449,MEMBER,<empty>,<empty>,recordTypes,31,,<empty>,2405,recordTypes,,,12,,std.set<std.string>
+103079215450,MEMBER,<empty>,<empty>,baseTypes,31,,<empty>,2406,baseTypes,,,13,,std.set<std.string>
+103079215451,MEMBER,<empty>,<empty>,mVariableId,53,,<empty>,4121,mVariableId,,,1,,"std.unordered_map<std.string,int>"
+103079215452,MEMBER,<empty>,<empty>,mVariableId_global,53,,<empty>,4122,mVariableId_global,,,2,,"std.unordered_map<std.string,int>"
+103079215453,MEMBER,<empty>,<empty>,mScopeInfo,69,,<empty>,4123,mScopeInfo,,,3,,"std.stack<std.vector<std.pair<std.string,int>>>"
+103079215454,MEMBER,<empty>,<empty>,mVarId{},28,,<empty>,4124,mVarId,,,4,,mutableint
+103079215455,MEMBER,<empty>,<empty>,usingnamespaces,34,,<empty>,4898,usingnamespaces,,,2,,std.list<constToken*>
+103079215456,MEMBER,<empty>,<empty>,scope,32,,<empty>,4899,scope,,,3,,std.list<std.string>
+103079215457,MEMBER,<empty>,<empty>,*tok,15,,<empty>,4900,tok,,,4,,Token*
+103079215458,MEMBER,<empty>,<empty>,mbcs,21,,<empty>,10096,mbcs,,,2,,std.string
+103079215459,MEMBER,<empty>,<empty>,unicode,27,,<empty>,10096,unicode,,,3,,std.string
+103079215460,MEMBER,<empty>,<empty>,op,28,,<empty>,456,op,,,1,,std.stack<Token*>
+103079215461,MEMBER,<empty>,<empty>,depth{},13,,<empty>,457,depth,,,2,,int
+103079215462,MEMBER,<empty>,<empty>,inArrayAssignment{},13,,<empty>,458,inArrayAssignment,,,3,,int
+103079215463,MEMBER,<empty>,<empty>,cpp,14,,<empty>,459,cpp,,,4,,bool
+103079215464,MEMBER,<empty>,<empty>,assign{},13,,<empty>,460,assign,,,5,,int
+103079215465,MEMBER,<empty>,<empty>,inCase{},14,,<empty>,461,inCase,,,6,,bool
+103079215466,MEMBER,<empty>,<empty>,inGeneric{},14,,<empty>,462,inGeneric,,,7,,bool
+103079215467,MEMBER,<empty>,<empty>,stopAtColon{},14,,<empty>,463,stopAtColon,,,8,,bool
+103079215468,MEMBER,<empty>,<empty>,* functionCallEndPar{},20,,<empty>,464,functionCallEndPar,,,9,,Token*
+103079215469,MEMBER,<empty>,<empty>,f,31,,<empty>,1873,f,,,1,,std.function<void()>
+103079215470,MEMBER,<empty>,<empty>,Undefined,45,,<empty>,1355,Undefined,,,1,,std.uint8_t
+103079215471,MEMBER,<empty>,<empty>,ByValue,56,,<empty>,1355,ByValue,,,2,,std.uint8_t
+103079215472,MEMBER,<empty>,<empty>,ByReference,65,,<empty>,1355,ByReference,,,3,,std.uint8_t
+103079215473,MEMBER,<empty>,<empty>,* argtok{},16,,<empty>,2003,argtok,,,1,,Token*
+103079215474,MEMBER,<empty>,<empty>,message,17,,<empty>,2004,message,,,2,,std.string
+103079215475,MEMBER,<empty>,<empty>,type = ValueFlow::Value::LifetimeKind::Object,36,,<empty>,2005,type,,,3,,ValueFlow.Value.LifetimeKind
+103079215476,MEMBER,<empty>,<empty>,errorPath,15,,<empty>,2006,errorPath,,,4,,ErrorPath
+103079215477,MEMBER,<empty>,<empty>,inconclusive{},10,,<empty>,2007,inconclusive,,,5,,bool
+103079215478,MEMBER,<empty>,<empty>,forward = true,10,,<empty>,2008,forward,,,6,,bool
+103079215479,MEMBER,<empty>,<empty>,* forwardTok{},10,,<empty>,2278,forwardTok,,,17,,Token*
+103079215480,MEMBER,<empty>,<empty>,* capture{},16,,<empty>,2771,capture,,,2,,Token*
+103079215481,MEMBER,<empty>,<empty>,* arguments{},16,,<empty>,2772,arguments,,,3,,Token*
+103079215482,MEMBER,<empty>,<empty>,* returnTok{},16,,<empty>,2773,returnTok,,,4,,Token*
+103079215483,MEMBER,<empty>,<empty>,* bodyTok{},16,,<empty>,2774,bodyTok,,,5,,Token*
+103079215484,MEMBER,<empty>,<empty>,explicitCaptures,83,,<empty>,2775,explicitCaptures,,,6,,"std.unordered_map<constVariable*,std.pair<constToken*,LifetimeCapture>>"
+103079215485,MEMBER,<empty>,<empty>,implicitCapture = LifetimeCapture::Undefined,21,,<empty>,2776,implicitCapture,,,7,,LifetimeCapture
+103079215486,MEMBER,<empty>,<empty>,* expr,16,,<empty>,3670,expr,,,1,,Token*
+103079215487,MEMBER,<empty>,<empty>,* vartok{},20,,<empty>,4255,vartok,,,1,,Token*
+103079215488,MEMBER,<empty>,<empty>,true_values,37,,<empty>,4256,true_values,,,2,,std.list<ValueFlow.Value>
+103079215489,MEMBER,<empty>,<empty>,false_values,37,,<empty>,4257,false_values,,,3,,std.list<ValueFlow.Value>
+103079215490,MEMBER,<empty>,<empty>,inverted = false,14,,<empty>,4258,inverted,,,4,,bool
+103079215491,MEMBER,<empty>,<empty>,impossible = true,14,,<empty>,4260,impossible,,,5,,bool
+103079215492,MEMBER,<empty>,<empty>,& tokenlist,14,,<empty>,7051,tokenlist,,,2,,TokenList&
+103079215493,MEMBER,<empty>,<empty>,& symboldatabase,19,,<empty>,7052,symboldatabase,,,3,,SymbolDatabase&
+103079215494,MEMBER,<empty>,<empty>,& errorLogger,16,,<empty>,7053,errorLogger,,,4,,ErrorLogger&
+103079215495,MEMBER,<empty>,<empty>,& settings,19,,<empty>,7054,settings,,,5,,Settings&
+103079215496,MEMBER,<empty>,<empty>,skippedFunctions,28,,<empty>,7055,skippedFunctions,,,6,,std.set<constScope*>
+103079215497,MEMBER,<empty>,<empty>,state,20,,<empty>,7183,state,,,10,,ValueFlowState
+103079215498,MEMBER,<empty>,<empty>,stop,15,,<empty>,7184,stop,,,11,,ValueFlowPassRunner.TimePoint
+103079215499,MEMBER,<empty>,<empty>,* timerResults,21,,<empty>,7185,timerResults,,,12,,TimerResultsIntf*
+103079215500,MEMBER,<empty>,<empty>,* mName = nullptr,15,,<empty>,7190,mName,,,1,,char*
+103079215501,MEMBER,<empty>,<empty>,mCPP = false,10,,<empty>,7191,mCPP,,,2,,bool
+103079215502,MEMBER,<empty>,<empty>,mRun,7,,<empty>,7192,mRun,,,3,,F
+103079215503,MEMBER,<empty>,<empty>,dependent = true,14,,<empty>,97,dependent,,,1,,bool
+103079215504,MEMBER,<empty>,<empty>,unknown = true,14,,<empty>,98,unknown,,,2,,bool
+103079215505,MEMBER,<empty>,<empty>,& settings,19,,<empty>,51,settings,,,1,,Settings&
+103079215506,MEMBER,<empty>,<empty>,pms,24,,<empty>,52,pms,,,2,,ProgramMemoryState
+103079215507,MEMBER,<empty>,<empty>,mIt,31,,<empty>,903,mIt,,,12,,M.const_iterator
+103079215508,MEMBER,<empty>,<empty>,*mMap,17,,<empty>,918,mMap,,,6,,MultiValueFlowAnalyzer.SelectValueFromVarIdMapRange.M*
+103079215509,MEMBER,<empty>,<empty>,values,54,,<empty>,921,values,,,2,,"std.unordered_map<int,ValueFlow.Value>"
+103079215510,MEMBER,<empty>,<empty>,vars,53,,<empty>,922,vars,,,3,,"std.unordered_map<int,constVariable*>"
+103079215511,MEMBER,<empty>,<empty>,* x,10,,<empty>,1113,x,,,1,,T*
+103079215512,MEMBER,<empty>,<empty>,varids,53,,<empty>,1073,varids,,,1,,"std.unordered_map<int,constVariable*>"
+103079215513,MEMBER,<empty>,<empty>,aliases,53,,<empty>,1074,aliases,,,2,,"std.unordered_map<int,constVariable*>"
+103079215514,MEMBER,<empty>,<empty>,value,22,,<empty>,1075,value,,,3,,ValueFlow.Value
+103079215515,MEMBER,<empty>,<empty>,* expr,16,,<empty>,1220,expr,,,1,,Token*
+103079215516,MEMBER,<empty>,<empty>,local = true,10,,<empty>,1221,local,,,2,,bool
+103079215517,MEMBER,<empty>,<empty>,unknown{},10,,<empty>,1222,unknown,,,3,,bool
+103079215518,MEMBER,<empty>,<empty>,dependOnThis{},10,,<empty>,1223,dependOnThis,,,4,,bool
+103079215519,MEMBER,<empty>,<empty>,uniqueExprId{},10,,<empty>,1224,uniqueExprId,,,5,,bool
+103079215520,MEMBER,<empty>,<empty>,isNot{},10,,<empty>,1350,isNot,,,1,,bool
+103079215521,MEMBER,<empty>,<empty>,partialReads,43,,<empty>,1373,partialReads,,,2,,std.shared_ptr<PartialReadContainer>
+103079215522,MEMBER,<empty>,<empty>,varname,17,,<empty>,1412,varname,,,1,,std.string
+103079215523,MEMBER,<empty>,<empty>,_s,17,,<empty>,10,_s,,,2,,std.string
+103079215524,MEMBER,<empty>,<empty>,_s,17,,<empty>,10,_s,,,2,,std.string
+103079215525,MEMBER,<empty>,<empty>,Compile,30,,<empty>,250,Compile,,,1,,std.uint8_t
+103079215526,MEMBER,<empty>,<empty>,Include,39,,<empty>,250,Include,,,2,,std.uint8_t
+103079215527,MEMBER,<empty>,<empty>,Precompile,48,,<empty>,250,Precompile,,,3,,std.uint8_t

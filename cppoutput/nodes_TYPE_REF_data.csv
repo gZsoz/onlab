@@ -1,0 +1,2515 @@
+180388626432,TYPE_REF,1,,"class XMLErrorMessagesLogger : public ErrorLogger
+    {
+        void reportOut(const std::string & outmsg, Color /*c*/ = Color::Reset) override
+        {
+            std::cout << outmsg << std::endl;
+        }
+
+        void reportErr(const ErrorMessage &msg) override
+        {
+            reportOut(msg.toXML());
+        }
+
+        void reportProgress(const std::string & /*filename*/, const char /*stage*/[], const std::size_t /*value*/) override
+        {}
+    }",5,,119,,,1,,XMLErrorMessagesLogger
+180388626433,TYPE_REF,1,,"class SarifReport {
+    public:
+        void addFinding(ErrorMessage msg) {
+            mFindings.push_back(std::move(msg));
+        }
+
+        picojson::array serializeRules() const {
+            picojson::array ret;
+            std::set<std::string> ruleIds;
+            for (const auto& finding : mFindings) {
+                // github only supports findings with locations
+                if (finding.callStack.empty())
+                    continue;
+                if (ruleIds.insert(finding.id).second) {
+                    picojson::object rule;
+                    rule[""id""] = picojson::value(finding.id);
+                    // rule.shortDescription.text
+                    picojson::object shortDescription;
+                    shortDescription[""text""] = picojson::value(finding.shortMessage());
+                    rule[""shortDescription""] = picojson::value(shortDescription);
+                    // rule.fullDescription.text
+                    picojson::object fullDescription;
+   ...",5,,81,,,1,,SarifReport
+180388626434,TYPE_REF,2,,"class CmdLineLoggerStd : public CmdLineLogger
+    {
+    public:
+        CmdLineLoggerStd() = default;
+
+        void printMessage(const std::string &message) override
+        {
+            printRaw(""cppcheck: "" + message);
+        }
+
+        void printError(const std::string &message) override
+        {
+            printMessage(""error: "" + message);
+        }
+
+        void printRaw(const std::string &message) override
+        {
+            std::cout << message << std::endl; // TODO: should not append newline
+        }
+    }",5,,227,,,2,,CmdLineLoggerStd
+180388626435,TYPE_REF,3,,"class StdLogger : public ErrorLogger
+    {
+    public:
+        explicit StdLogger(const Settings& settings)
+            : mSettings(settings)
+            , mGuidelineMapping(createGuidelineMapping(settings.reportType))
+        {
+            if (!mSettings.outputFile.empty()) {
+                mErrorOutput = new std::ofstream(settings.outputFile);
+            }
+        }
+
+        ~StdLogger() override {
+            if (mSettings.outputFormat == Settings::OutputFormat::sarif) {
+                reportErr(mSarifReport.serialize(mSettings.cppcheckCfgProductName));
+            }
+            delete mErrorOutput;
+        }
+
+        StdLogger(const StdLogger&) = delete;
+        StdLogger& operator=(const SingleExecutor &) = delete;
+
+        void resetLatestProgressOutputTime() {
+            mLatestProgressOutputTime = std::time(nullptr);
+        }
+
+        /**
+         * Helper function to print out errors. Appends a line change.
+         * @param errmsg String printed to error stream
+      ...",5,,248,,,3,,StdLogger
+180388626436,TYPE_REF,-1,,"enum PipeSignal : std::uint8_t {REPORT_OUT='1',REPORT_ERROR='2',REPORT_SUPPR_INLINE='3',CHILD_END='5'}",9,,81,,,1,,PipeWriter.PipeSignal
+180388626437,TYPE_REF,1,,enum class Color : std::uint8_t,1,,65,,,1,,Color
+180388626438,TYPE_REF,1,,"class PipeWriter : public ErrorLogger {
+    public:
+        enum PipeSignal : std::uint8_t {REPORT_OUT='1',REPORT_ERROR='2',REPORT_SUPPR_INLINE='3',CHILD_END='5'};
+
+        explicit PipeWriter(int pipe) : mWpipe(pipe) {}
+
+        void reportOut(const std::string &outmsg, Color c) override {
+            writeToPipe(REPORT_OUT, static_cast<char>(c) + outmsg);
+        }
+
+        void reportErr(const ErrorMessage &msg) override {
+            writeToPipe(REPORT_ERROR, msg.serialize());
+        }
+
+        void writeSuppr(const SuppressionList &supprs) const {
+            for (const auto& suppr : supprs.getSuppressions())
+            {
+                if (!suppr.isInline)
+                    continue;
+
+                writeToPipe(REPORT_SUPPR_INLINE, suppressionToString(suppr));
+            }
+            // TODO: update suppression states?
+        }
+
+        void writeEnd(const std::string& str) const {
+            writeToPipe(CHILD_END, str);
+        }
+
+    private:
+        static std::st...",5,,79,,,1,,PipeWriter
+180388626439,TYPE_REF,2,,"class SyncLogForwarder : public ErrorLogger
+{
+public:
+    explicit SyncLogForwarder(ThreadExecutor &threadExecutor, ErrorLogger &errorLogger)
+        : mThreadExecutor(threadExecutor), mErrorLogger(errorLogger) {}
+
+    void reportOut(const std::string &outmsg, Color c) override
+    {
+        std::lock_guard<std::mutex> lg(mReportSync);
+
+        mErrorLogger.reportOut(outmsg, c);
+    }
+
+    void reportErr(const ErrorMessage &msg) override {
+        if (!mThreadExecutor.hasToLog(msg))
+            return;
+
+        std::lock_guard<std::mutex> lg(mReportSync);
+        mErrorLogger.reportErr(msg);
+    }
+
+    void reportStatus(std::size_t fileindex, std::size_t filecount, std::size_t sizedone, std::size_t sizetotal) {
+        std::lock_guard<std::mutex> lg(mReportSync);
+        mThreadExecutor.reportStatus(fileindex, filecount, sizedone, sizetotal);
+    }
+
+private:
+    std::mutex mReportSync;
+    ThreadExecutor &mThreadExecutor;
+    ErrorLogger &mErrorLogger;
+}",1,,48,,,2,,SyncLogForwarder
+180388626440,TYPE_REF,3,,"class ThreadData
+{
+public:
+    ThreadData(ThreadExecutor &threadExecutor, ErrorLogger &errorLogger, const Settings &settings, Suppressions& supprs, const std::list<FileWithDetails> &files, const std::list<FileSettings> &fileSettings, CppCheck::ExecuteCmdFn executeCommand)
+        : mFiles(files), mFileSettings(fileSettings), mSettings(settings), mSuppressions(supprs), mExecuteCommand(std::move(executeCommand)), logForwarder(threadExecutor, errorLogger)
+    {
+        mItNextFile = mFiles.begin();
+        mItNextFileSettings = mFileSettings.begin();
+
+        mTotalFiles = mFiles.size() + mFileSettings.size();
+        mTotalFileSize = std::accumulate(mFiles.cbegin(), mFiles.cend(), std::size_t(0), [](std::size_t v, const FileWithDetails& p) {
+            return v + p.size();
+        });
+    }
+
+    bool next(const FileWithDetails *&file, const FileSettings *&fs, std::size_t &fileSize) {
+        std::lock_guard<std::mutex> l(mFileSync);
+        if (mItNextFile != mFiles.end()) {
+        ...",1,,80,,,3,,ThreadData
+180388626441,TYPE_REF,1,,enum class Color : std::uint8_t,1,,36,,,1,,Color
+180388626442,TYPE_REF,5,,"class CppcheckExecutor : public ErrorLogger {
+private:
+    const std::time_t stoptime;
+    Suppressions supprs;
+    CppCheck cppcheck;
+
+public:
+    CppcheckExecutor(const Settings& settings)
+        : stoptime(std::time(nullptr)+2U)
+        , cppcheck(settings, supprs, *this, false, nullptr)
+    {}
+
+    void run(const char code[]) {
+        cppcheck.check(FileWithDetails(""test.cpp""), code);
+    }
+
+    void reportOut(const std::string & /*outmsg*/, Color /*c*/) override {}
+    void reportErr(const ErrorMessage &msg) override {
+        const std::string s = msg.toString(true);
+
+        std::cout << s << std::endl;
+
+        if (logfile != nullptr)
+            std::fprintf(logfile, ""%s\\n"", s.c_str());
+    }
+
+    void reportProgress(const std::string& /*filename*/,
+                        const char /*stage*/[],
+                        const std::size_t /*value*/) override {
+        if (std::time(nullptr) >= stoptime) {
+            std::cout << ""Time to analyse the code exceeded 2 second...",1,,57,,,5,,CppcheckExecutor
+180388626443,TYPE_REF,-1,,"struct Error {
+            Error(const Location &loc, const std::string &s) : location(loc), what(s) {}
+            const Location location;
+            const std::string what;
+        }",9,,1648,,,12,,simplecpp.Macro.Error
+180388626444,TYPE_REF,-1,,"struct wrongNumberOfParameters : public Error {
+            wrongNumberOfParameters(const Location &loc, const std::string &macroName) : Error(loc, ""Wrong number of parameters for macro \\'"" + macroName + ""\\'."") {}
+        }",9,,1655,,,13,,simplecpp.Macro.wrongNumberOfParameters
+180388626445,TYPE_REF,-1,,"struct invalidHashHash : public Error {
+            static inline std::string format(const std::string &macroName, const std::string &message) {
+                return ""Invalid ## usage when expanding \\'"" + macroName + ""\\': "" + message;
+            }
+
+            invalidHashHash(const Location &loc, const std::string &macroName, const std::string &message)
+                : Error(loc, format(macroName, message)) { }
+
+            static inline invalidHashHash unexpectedToken(const Location &loc, const std::string &macroName, const Token *tokenA) {
+                return invalidHashHash(loc, macroName, ""Unexpected token '""+ tokenA->str()+""'"");
+            }
+
+            static inline invalidHashHash cannotCombine(const Location &loc, const std::string &macroName, const Token *tokenA, const Token *tokenB) {
+                return invalidHashHash(loc, macroName, ""Combining '""+ tokenA->str()+ ""' and '""+ tokenB->str() + ""' yields an invalid token."");
+            }
+
+            static inli...",9,,1660,,,14,,simplecpp.Macro.invalidHashHash
+180388626446,TYPE_REF,51,,"class simplecpp::TokenList::Stream {
+public:
+    virtual ~Stream() {}
+
+    virtual int get() = 0;
+    virtual int peek() = 0;
+    virtual void unget() = 0;
+    virtual bool good() = 0;
+
+    unsigned char readChar() {
+        unsigned char ch = static_cast<unsigned char>(get());
+
+        // For UTF-16 encoded files the BOM is 0xfeff/0xfffe. If the
+        // character is non-ASCII character then replace it with 0xff
+        if (isUtf16) {
+            const unsigned char ch2 = static_cast<unsigned char>(get());
+            const int ch16 = makeUtf16Char(ch, ch2);
+            ch = static_cast<unsigned char>(((ch16 >= 0x80) ? 0xff : ch16));
+        }
+
+        // Handling of newlines..
+        if (ch == '\\r') {
+            ch = '\\n';
+
+            int ch2 = get();
+            if (isUtf16) {
+                const int c2 = get();
+                ch2 = makeUtf16Char(ch2, c2);
+            }
+
+            if (ch2 != '\\n')
+                ungetChar();
+        }
+
+        return ch;
+    }
+
+    uns...",1,,245,,,51,,simplecpp.TokenList.Stream
+180388626447,TYPE_REF,52,,"class StdIStream : public simplecpp::TokenList::Stream {
+public:
+    // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
+    EXPLICIT StdIStream(std::istream &istr)
+        : istr(istr) {
+        assert(istr.good());
+        init();
+    }
+
+    virtual int get() OVERRIDE {
+        return istr.get();
+    }
+    virtual int peek() OVERRIDE {
+        return istr.peek();
+    }
+    virtual void unget() OVERRIDE {
+        istr.unget();
+    }
+    virtual bool good() OVERRIDE {
+        return istr.good();
+    }
+
+private:
+    std::istream &istr;
+}",1,,356,,,52,,StdIStream
+180388626448,TYPE_REF,53,,"class StdCharBufStream : public simplecpp::TokenList::Stream {
+public:
+    // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
+    StdCharBufStream(const unsigned char* str, std::size_t size)
+        : str(str)
+        , size(size)
+        , pos(0)
+        , lastStatus(0) {
+        init();
+    }
+
+    virtual int get() OVERRIDE {
+        if (pos >= size)
+            return lastStatus = EOF;
+        return str[pos++];
+    }
+    virtual int peek() OVERRIDE {
+        if (pos >= size)
+            return lastStatus = EOF;
+        return str[pos];
+    }
+    virtual void unget() OVERRIDE {
+        --pos;
+    }
+    virtual bool good() OVERRIDE {
+        return lastStatus != EOF;
+    }
+
+private:
+    const unsigned char *str;
+    const std::size_t size;
+    std::size_t pos;
+    int lastStatus;
+}",1,,382,,,53,,StdCharBufStream
+180388626449,TYPE_REF,54,,"class FileStream : public simplecpp::TokenList::Stream {
+public:
+    // cppcheck-suppress uninitDerivedMemberVar - we call Stream::init() to initialize the private members
+    EXPLICIT FileStream(const std::string &filename, std::vector<std::string> &files)
+        : file(fopen(filename.c_str(), ""rb""))
+        , lastCh(0)
+        , lastStatus(0) {
+        if (!file) {
+            files.push_back(filename);
+            throw simplecpp::Output(files, simplecpp::Output::FILE_NOT_FOUND, ""File is missing: "" + filename);
+        }
+        init();
+    }
+
+    ~FileStream() OVERRIDE {
+        fclose(file);
+        file = nullptr;
+    }
+
+    virtual int get() OVERRIDE {
+        lastStatus = lastCh = fgetc(file);
+        return lastCh;
+    }
+    virtual int peek() OVERRIDE{
+        // keep lastCh intact
+        const int ch = fgetc(file);
+        unget_internal(ch);
+        return ch;
+    }
+    virtual void unget() OVERRIDE {
+        unget_internal(lastCh);
+    }
+    virtual bool good() OVERRI...",1,,417,,,54,,FileStream
+180388626450,TYPE_REF,3,,"class Macro {
+    public:
+        explicit Macro(std::vector<std::string> &f) : nameTokDef(nullptr), valueToken(nullptr), endToken(nullptr), files(f), tokenListDefine(f), variadic(false), valueDefinedInCode_(false) {}
+
+        Macro(const Token *tok, std::vector<std::string> &f) : nameTokDef(nullptr), files(f), tokenListDefine(f), valueDefinedInCode_(true) {
+            if (sameline(tok->previousSkipComments(), tok))
+                throw std::runtime_error(""bad macro syntax"");
+            if (tok->op != '#')
+                throw std::runtime_error(""bad macro syntax"");
+            const Token * const hashtok = tok;
+            tok = tok->next;
+            if (!tok || tok->str() != DEFINE)
+                throw std::runtime_error(""bad macro syntax"");
+            tok = tok->next;
+            if (!tok || !tok->name || !sameline(hashtok,tok))
+                throw std::runtime_error(""bad macro syntax"");
+            if (!parseDefine(tok))
+                throw std::runtime_error(""bad ma...",5,,1474,,,3,,simplecpp.Macro
+180388626451,TYPE_REF,114,,"class MyMutex {
+public:
+    MyMutex() {
+        InitializeCriticalSection(&m_criticalSection);
+    }
+
+    ~MyMutex() {
+        DeleteCriticalSection(&m_criticalSection);
+    }
+
+    CRITICAL_SECTION* lock() {
+        return &m_criticalSection;
+    }
+private:
+    CRITICAL_SECTION m_criticalSection;
+}",1,,2381,,,114,,MyMutex
+180388626452,TYPE_REF,115,,"class MyLock {
+public:
+    explicit MyLock(T& m)
+        : m_mutex(m) {
+        EnterCriticalSection(m_mutex.lock());
+    }
+
+    ~MyLock() {
+        LeaveCriticalSection(m_mutex.lock());
+    }
+
+private:
+    MyLock& operator=(const MyLock&);
+    MyLock(const MyLock&);
+
+    T& m_mutex;
+}",1,,2399,,,115,,MyLock
+180388626453,TYPE_REF,116,,"class RealFileNameMap {
+public:
+    RealFileNameMap() {}
+
+    bool getCacheEntry(const std::string& path, std::string& returnPath) {
+        MyLock<MyMutex> lock(m_mutex);
+
+        const std::map<std::string, std::string>::iterator it = m_fileMap.find(path);
+        if (it != m_fileMap.end()) {
+            returnPath = it->second;
+            return true;
+        }
+        return false;
+    }
+
+    void addToCache(const std::string& path, const std::string& actualPath) {
+        MyLock<MyMutex> lock(m_mutex);
+        m_fileMap[path] = actualPath;
+    }
+
+private:
+    std::map<std::string, std::string> m_fileMap;
+    MyMutex m_mutex;
+}",1,,2418,,,116,,RealFileNameMap
+180388626454,TYPE_REF,138,,"class NonExistingFilesCache {
+public:
+    NonExistingFilesCache() {}
+
+    bool contains(const std::string& path) {
+        MyLock<MyMutex> lock(m_mutex);
+        return (m_pathSet.find(path) != m_pathSet.end());
+    }
+
+    void add(const std::string& path) {
+        MyLock<MyMutex> lock(m_mutex);
+        m_pathSet.insert(path);
+    }
+
+    void clear() {
+        MyLock<MyMutex> lock(m_mutex);
+        m_pathSet.clear();
+    }
+
+private:
+    std::set<std::string> m_pathSet;
+    MyMutex m_mutex;
+}",1,,3056,,,138,,NonExistingFilesCache
+180388626455,TYPE_REF,1,,"struct Entity {
+    const char* pattern;
+    int length;
+    char value;
+}",1,,141,,,1,,tinyxml2.Entity
+180388626456,TYPE_REF,1,,"class FunctionListItem : public QListWidgetItem {
+    public:
+        FunctionListItem(QListWidget *view,
+                         CppcheckLibraryData::Function *function,
+                         bool selected)
+            : QListWidgetItem(view), function(function) {
+            setText(function->name);
+            setFlags(flags() | Qt::ItemIsEditable);
+            setSelected(selected);
+        }
+        CppcheckLibraryData::Function *function;
+    }",5,,51,,,1,,FunctionListItem
+180388626457,TYPE_REF,2,,"struct PlatformData {
+    QString mTitle;  /**< Text visible in the GUI. */
+    Platform::Type mType; /**< Type in the core. */
+    QAction *mActMainWindow; /**< Pointer to main window action item. */
+}",1,,36,,,2,,PlatformData
+180388626458,TYPE_REF,1,,enum class ReportType : std::uint8_t,1,,76,,,1,,ReportType
+180388626459,TYPE_REF,2,,"struct TranslationInfo {
+    /**
+     * @brief Readable name for the translation (e.g. ""English"").
+     *
+     */
+    QString mName;
+
+    /**
+     * @brief Filename for the translation.
+     *
+     */
+    QString mFilename;
+
+    /**
+     * @brief ISO 639 language code for the translation (e.g. ""en"").
+     *
+     */
+    QString mCode;
+}",1,,35,,,2,,TranslationInfo
+180388626460,TYPE_REF,1,,"struct CPPCHECKLIB AddonInfo {
+    std::string name;
+    std::string scriptFile; // addon script
+    std::string executable; // addon executable
+    std::string args;       // special extra arguments
+    std::string python;     // script interpreter
+    bool ctu = false;
+    std::string runScript;
+
+    std::string getAddonInfo(const std::string &fileName, const std::string &exename, bool debug = false);
+}",1,,26,,,1,,AddonInfo
+180388626461,TYPE_REF,-1,,"struct Action {
+
+        Action() = default;
+        Action(const Action&) = default;
+        Action& operator=(const Action& rhs) & = default;
+
+        template<class T,
+                 REQUIRES(""T must be convertible to unsigned int"", std::is_convertible<T, unsigned int> ),
+                 REQUIRES(""T must not be a bool"", !std::is_same<T, bool> )>
+        // NOLINTNEXTLINE(google-explicit-constructor)
+        Action(T f) : mFlag(f) // cppcheck-suppress noExplicitConstructor
+        {}
+
+        enum : std::uint16_t {
+            None = 0,
+            Read = (1 << 0),
+            Write = (1 << 1),
+            Invalid = (1 << 2),
+            Inconclusive = (1 << 3),
+            Match = (1 << 4),
+            Idempotent = (1 << 5),
+            Incremental = (1 << 6),
+            SymbolicMatch = (1 << 7),
+            Internal = (1 << 8),
+        };
+
+        void set(unsigned int f, bool state = true) {
+            mFlag = state ? mFlag | f : mFlag & ~f;
+        }
+
+        bool get(uns...",5,,35,,,1,,Analyzer.Action
+180388626462,TYPE_REF,-1,,"struct Result {
+        explicit Result(Action action = Action::None, Terminate terminate = Terminate::None)
+            : action(action), terminate(terminate)
+        {}
+        Action action;
+        Terminate terminate;
+
+        void update(Result rhs) {
+            if (terminate == Terminate::None)
+                terminate = rhs.terminate;
+            action |= rhs.action;
+        }
+    }",5,,137,,,3,,Analyzer.Result
+180388626463,TYPE_REF,-1,,"struct Assume {
+        enum Flags : std::uint8_t {
+            None = 0,
+            Quiet = (1 << 0),
+            Absolute = (1 << 1),
+            ContainerEmpty = (1 << 2),
+        };
+    }",5,,153,,,5,,Analyzer.Assume
+180388626464,TYPE_REF,3,,"struct Analyzer {
+    struct Action {
+
+        Action() = default;
+        Action(const Action&) = default;
+        Action& operator=(const Action& rhs) & = default;
+
+        template<class T,
+                 REQUIRES(""T must be convertible to unsigned int"", std::is_convertible<T, unsigned int> ),
+                 REQUIRES(""T must not be a bool"", !std::is_same<T, bool> )>
+        // NOLINTNEXTLINE(google-explicit-constructor)
+        Action(T f) : mFlag(f) // cppcheck-suppress noExplicitConstructor
+        {}
+
+        enum : std::uint16_t {
+            None = 0,
+            Read = (1 << 0),
+            Write = (1 << 1),
+            Invalid = (1 << 2),
+            Inconclusive = (1 << 3),
+            Match = (1 << 4),
+            Idempotent = (1 << 5),
+            Incremental = (1 << 6),
+            SymbolicMatch = (1 << 7),
+            Internal = (1 << 8),
+        };
+
+        void set(unsigned int f, bool state = true) {
+            mFlag = state ? mFlag | f : mFlag & ~f;
+        }...",1,,34,,,3,,Analyzer
+180388626465,TYPE_REF,1,,"struct ExpressionChangedSimpleFind {
+        template<class F>
+        const Token* operator()(const Token* start, const Token* end, F f) const
+        {
+            return findToken(start, end, f);
+        }
+    }",5,,3085,,,1,,ExpressionChangedSimpleFind
+180388626466,TYPE_REF,2,,"struct ExpressionChangedSkipDeadCode {
+        const Library& library;
+        const std::function<std::vector<MathLib::bigint>(const Token* tok)>* evaluate;
+        ExpressionChangedSkipDeadCode(const Library& library,
+                                      const std::function<std::vector<MathLib::bigint>(const Token* tok)>& evaluate)
+            : library(library), evaluate(&evaluate)
+        {}
+        template<class F>
+        const Token* operator()(const Token* start, const Token* end, F f) const
+        {
+            return findTokenSkipDeadCode(library, start, end, std::move(f), *evaluate);
+        }
+    }",5,,3093,,,2,,ExpressionChangedSkipDeadCode
+180388626467,TYPE_REF,22,,"struct ReferenceToken {
+    ReferenceToken(const Token* t, ErrorPath e)
+        : token(t)
+        , errors(std::move(e))
+    {}
+    const Token* token;
+    ErrorPath errors;
+}",1,,247,,,22,,ReferenceToken
+180388626468,TYPE_REF,1,,"class MyFileInfo : public Check::FileInfo {
+    public:
+        using Check::FileInfo::FileInfo;
+        /** unsafe array index usage */
+        std::list<CTU::FileInfo::UnsafeUsage> unsafeArrayIndex;
+
+        /** unsafe pointer arithmetics */
+        std::list<CTU::FileInfo::UnsafeUsage> unsafePointerArith;
+
+        /** Convert data into xml string */
+        std::string toString() const override
+        {
+            std::string xml;
+            if (!unsafeArrayIndex.empty())
+                xml = ""    <array-index>\\n"" + CTU::toString(unsafeArrayIndex) + ""    </array-index>\\n"";
+            if (!unsafePointerArith.empty())
+                xml += ""    <pointer-arith>\\n"" + CTU::toString(unsafePointerArith) + ""    </pointer-arith>\\n"";
+            return xml;
+        }
+    }",5,,896,,,1,,MyFileInfo
+180388626469,TYPE_REF,-1,,"struct NameLoc {
+            std::string className;
+            std::string fileName;
+            int lineNumber;
+            int column;
+            std::size_t hash;
+
+            bool isSameLocation(const NameLoc& other) const {
+                return fileName == other.fileName &&
+                       lineNumber == other.lineNumber &&
+                       column == other.column;
+            }
+        }",9,,3571,,,1,,MyFileInfo.NameLoc
+180388626470,TYPE_REF,1,,"struct VarInfo {
+        VarInfo(const Variable *_var, const Token *_tok)
+            : var(_var), tok(_tok) {}
+
+        const Variable *var;
+        const Token *tok;
+        std::vector<const Variable*> initArgs;
+    }",5,,2678,,,1,,VarInfo
+180388626471,TYPE_REF,1,,"struct DuplMemberInfo {
+        DuplMemberInfo(const Variable* cv, const Variable* pcv, const Type::BaseInfo* pc) : classVar(cv), parentClassVar(pcv), parentClass(pc) {}
+        const Variable* classVar;
+        const Variable* parentClassVar;
+        const Type::BaseInfo* parentClass;
+    }",5,,3011,,,1,,DuplMemberInfo
+180388626472,TYPE_REF,2,,"struct DuplMemberFuncInfo {
+        DuplMemberFuncInfo(const Function* cf, const Function* pcf, const Type::BaseInfo* pc) : classFunc(cf), parentClassFunc(pcf), parentClass(pc) {}
+        const Function* classFunc;
+        const Function* parentClassFunc;
+        const Type::BaseInfo* parentClass;
+    }",5,,3017,,,2,,DuplMemberFuncInfo
+180388626473,TYPE_REF,104,,"enum class CtorType : std::uint8_t {
+    NO,
+    WITHOUT_BODY,
+    WITH_BODY
+}",1,,3124,,,104,,CtorType
+180388626474,TYPE_REF,1,,"class MyFileInfo : public Check::FileInfo {
+    public:
+        using Check::FileInfo::FileInfo;
+        struct NameLoc {
+            std::string className;
+            std::string fileName;
+            int lineNumber;
+            int column;
+            std::size_t hash;
+
+            bool isSameLocation(const NameLoc& other) const {
+                return fileName == other.fileName &&
+                       lineNumber == other.lineNumber &&
+                       column == other.column;
+            }
+        };
+        std::vector<NameLoc> classDefinitions;
+
+        /** Convert data into xml string */
+        std::string toString() const override
+        {
+            std::string ret;
+            for (const NameLoc &nameLoc: classDefinitions) {
+                ret += ""<class name=\\"""" + ErrorLogger::toxml(nameLoc.className) +
+                       ""\\"" file=\\"""" + ErrorLogger::toxml(nameLoc.fileName) +
+                       ""\\"" line=\\"""" + std::to_string(nameLoc.lineNumber) +
+       ...",5,,3568,,,1,,MyFileInfo
+180388626475,TYPE_REF,-1,,"enum class Operation : std::uint8_t {NONE, UNIMPORTANT, READ, WRITE, POSITIONING, OPEN, CLOSE, UNKNOWN_OP}",9,,115,,,3,,Filepointer.Operation
+180388626476,TYPE_REF,-1,,"enum class AppendMode : std::uint8_t { UNKNOWN_AM, APPEND, APPEND_EX }",9,,117,,,5,,Filepointer.AppendMode
+180388626477,TYPE_REF,20,,"enum class OpenMode : std::uint8_t { CLOSED, READ_MODE, WRITE_MODE, RW_MODE, UNKNOWN_OM }",1,,99,,,20,,OpenMode
+180388626478,TYPE_REF,1,,"struct Filepointer {
+        OpenMode mode;
+        nonneg int mode_indent{};
+        enum class Operation : std::uint8_t {NONE, UNIMPORTANT, READ, WRITE, POSITIONING, OPEN, CLOSE, UNKNOWN_OP} lastOperation = Operation::NONE;
+        nonneg int op_indent{};
+        enum class AppendMode : std::uint8_t { UNKNOWN_AM, APPEND, APPEND_EX };
+        AppendMode append_mode = AppendMode::UNKNOWN_AM;
+        std::string filename;
+        explicit Filepointer(OpenMode mode_ = OpenMode::UNKNOWN_OM)
+            : mode(mode_) {}
+    }",5,,112,,,1,,Filepointer
+180388626479,TYPE_REF,1,,"class MyFileInfo : public Check::FileInfo {
+    public:
+        using Check::FileInfo::FileInfo;
+        /** function arguments that are dereferenced without checking if they are null */
+        std::list<CTU::FileInfo::UnsafeUsage> unsafeUsage;
+
+        /** Convert data into xml string */
+        std::string toString() const override
+        {
+            return CTU::toString(unsafeUsage);
+        }
+    }",5,,609,,,1,,MyFileInfo
+180388626480,TYPE_REF,1,,"struct CompareVariables {
+        bool operator()(const Variable* a, const Variable* b) const {
+            const int fileA = a->nameToken()->fileIndex();
+            const int fileB = b->nameToken()->fileIndex();
+            if (fileA != fileB)
+                return fileA < fileB;
+            const int lineA = a->nameToken()->linenr();
+            const int lineB = b->nameToken()->linenr();
+            if (lineA != lineB)
+                return lineA < lineB;
+            const int columnA = a->nameToken()->column();
+            const int columnB = b->nameToken()->column();
+            return columnA < columnB;
+        }
+    }",5,,1678,,,1,,CompareVariables
+180388626481,TYPE_REF,-1,,"struct Reference {
+                const Token* tok;
+                ErrorPath errorPath;
+                const Token* ftok;
+            }",13,,978,,,1,,InvalidContainerAnalyzer.Info.Reference
+180388626482,TYPE_REF,-1,,"struct Info {
+            struct Reference {
+                const Token* tok;
+                ErrorPath errorPath;
+                const Token* ftok;
+            };
+            std::unordered_map<int, Reference> expressions;
+
+            void add(const std::vector<Reference>& refs) {
+                for (const Reference& r : refs) {
+                    add(r);
+                }
+            }
+            void add(const Reference& r) {
+                if (!r.tok)
+                    return;
+                expressions.emplace(r.tok->exprId(), r);
+            }
+
+            std::vector<Reference> invalidTokens() const {
+                std::vector<Reference> result;
+                std::transform(expressions.cbegin(), expressions.cend(), std::back_inserter(result), SelectMapValues{});
+                return result;
+            }
+        }",9,,977,,,1,,InvalidContainerAnalyzer.Info
+180388626483,TYPE_REF,1,,"struct ArgIteratorInfo {
+        const Token* tok;
+        const Library::ArgumentChecks::IteratorInfo* info;
+    }",5,,817,,,1,,ArgIteratorInfo
+180388626484,TYPE_REF,1,,"struct InvalidContainerAnalyzer {
+        struct Info {
+            struct Reference {
+                const Token* tok;
+                ErrorPath errorPath;
+                const Token* ftok;
+            };
+            std::unordered_map<int, Reference> expressions;
+
+            void add(const std::vector<Reference>& refs) {
+                for (const Reference& r : refs) {
+                    add(r);
+                }
+            }
+            void add(const Reference& r) {
+                if (!r.tok)
+                    return;
+                expressions.emplace(r.tok->exprId(), r);
+            }
+
+            std::vector<Reference> invalidTokens() const {
+                std::vector<Reference> result;
+                std::transform(expressions.cbegin(), expressions.cend(), std::back_inserter(result), SelectMapValues{});
+                return result;
+            }
+        };
+        std::unordered_map<const Function*, Info> invalidMethods;
+
+        std::vector<Info::Reference> i...",5,,976,,,1,,InvalidContainerAnalyzer
+180388626485,TYPE_REF,119,,"enum class LoopType : std::uint8_t { OTHER, RANGE, ITERATOR, INDEX }",1,,2602,,,119,,LoopType
+180388626486,TYPE_REF,1,,"struct LoopAnalyzer {
+        const Token* bodyTok = nullptr;
+        const Token* loopVar = nullptr;
+        const Settings* settings = nullptr;
+        std::set<nonneg int> varsChanged;
+
+        explicit LoopAnalyzer(const Token* tok, const Settings* psettings)
+            : bodyTok(tok->linkAt(1)->next()), settings(psettings)
+        {
+            const Token* splitTok = tok->next()->astOperand2();
+            if (Token::simpleMatch(splitTok, "":"") && splitTok->previous()->varId() != 0) {
+                loopVar = splitTok->previous();
+            }
+            if (valid()) {
+                findChangedVariables();
+            }
+        }
+        bool isLoopVarChanged() const {
+            return varsChanged.count(loopVar->varId()) > 0;
+        }
+
+        bool isModified(const Token* tok) const
+        {
+            if (tok->variable() && tok->variable()->isConst())
+                return false;
+            int n = 1 + (astIsPointer(tok) ? 1 : 0);
+            for (int i = 0; i < n...",5,,2821,,,1,,LoopAnalyzer
+180388626487,TYPE_REF,1,,"class MyFileInfo : public Check::FileInfo {
+    public:
+        using Check::FileInfo::FileInfo;
+        /** function arguments that data are unconditionally read */
+        std::list<CTU::FileInfo::UnsafeUsage> unsafeUsage;
+
+        /** Convert data into xml string */
+        std::string toString() const override
+        {
+            return CTU::toString(unsafeUsage);
+        }
+    }",5,,1711,,,1,,MyFileInfo
+180388626488,TYPE_REF,9,,"struct VariableValue {
+    explicit VariableValue(MathLib::bigint val = 0) : value(val) {}
+    MathLib::bigint value;
+    bool notEqual{};
+}",1,,47,,,9,,VariableValue
+180388626489,TYPE_REF,1,,"struct Location {
+        Location() : lineNumber(0) {}
+        Location(std::string f, const int l) : fileName(std::move(f)), lineNumber(l) {}
+        std::string fileName;
+        int lineNumber;
+    }",5,,439,,,1,,Location
+180388626490,TYPE_REF,-1,,"enum VariableType : std::uint8_t { standard, array, pointer, reference, pointerArray, referenceArray, pointerPointer, none }",5,,105,,,1,,Variables.VariableType
+180388626491,TYPE_REF,-1,,"class VariableUsage {
+    public:
+        explicit VariableUsage(const Variable *var = nullptr,
+                               VariableType type = standard,
+                               bool read = false,
+                               bool write = false,
+                               bool modified = false,
+                               bool allocateMemory = false) :
+            _var(var),
+            _lastAccess(var ? var->nameToken() : nullptr),
+            mType(type),
+            _read(read),
+            _write(write),
+            _modified(modified),
+            _allocateMemory(allocateMemory) {}
+
+        /** variable is used.. set both read+write */
+        void use() {
+            _read = true;
+            _write = true;
+        }
+
+        /** is variable unused? */
+        bool unused() const {
+            return (!_read && !_write);
+        }
+
+        std::set<nonneg int> _aliases;
+        std::set<const Scope*> _assignments;
+
+        const Variable* _var;
+        const...",5,,108,,,2,,Variables.VariableUsage
+180388626492,TYPE_REF,8,,"class Variables {
+public:
+    enum VariableType : std::uint8_t { standard, array, pointer, reference, pointerArray, referenceArray, pointerPointer, none };
+
+    /** Store information about variable usage */
+    class VariableUsage {
+    public:
+        explicit VariableUsage(const Variable *var = nullptr,
+                               VariableType type = standard,
+                               bool read = false,
+                               bool write = false,
+                               bool modified = false,
+                               bool allocateMemory = false) :
+            _var(var),
+            _lastAccess(var ? var->nameToken() : nullptr),
+            mType(type),
+            _read(read),
+            _write(write),
+            _modified(modified),
+            _allocateMemory(allocateMemory) {}
+
+        /** variable is used.. set both read+write */
+        void use() {
+            _read = true;
+            _write = true;
+        }
+
+        /** is variable unused? *...",1,,103,,,8,,Variables
+180388626493,TYPE_REF,-1,,"struct Decl {
+            explicit Decl(Scope *scope) : scope(scope) {}
+            Decl(Token *def, Variable *var) : def(def), var(var) {}
+            Decl(Token *def, Function *function) : def(def), function(function) {}
+            Decl(Token *def, Enumerator *enumerator) : def(def), enumerator(enumerator) {}
+            void ref(Token *tok) const {
+                if (enumerator)
+                    tok->enumerator(enumerator);
+                if (function)
+                    tok->function(function);
+                if (var) {
+                    tok->variable(var);
+                    tok->varId(var->declarationId());
+                }
+            }
+            Token* def{};
+            Enumerator* enumerator{};
+            Function* function{};
+            Scope* scope{};
+            Variable* var{};
+        }",9,,208,,,1,,clangimport.Data.Decl
+180388626494,TYPE_REF,1,,"struct Data {
+        struct Decl {
+            explicit Decl(Scope *scope) : scope(scope) {}
+            Decl(Token *def, Variable *var) : def(def), var(var) {}
+            Decl(Token *def, Function *function) : def(def), function(function) {}
+            Decl(Token *def, Enumerator *enumerator) : def(def), enumerator(enumerator) {}
+            void ref(Token *tok) const {
+                if (enumerator)
+                    tok->enumerator(enumerator);
+                if (function)
+                    tok->function(function);
+                if (var) {
+                    tok->variable(var);
+                    tok->varId(var->declarationId());
+                }
+            }
+            Token* def{};
+            Enumerator* enumerator{};
+            Function* function{};
+            Scope* scope{};
+            Variable* var{};
+        };
+
+        const Settings *mSettings = nullptr;
+        SymbolDatabase *mSymbolDatabase = nullptr;
+
+        int enumValue = 0;
+
+        void enumDe...",5,,207,,,1,,clangimport.Data
+180388626495,TYPE_REF,4,,"class AstNode {
+    public:
+        AstNode(std::string nodeType, const std::string &ext, Data *data)
+            : nodeType(std::move(nodeType)), mExtTokens(splitString(ext)), mData(data)
+        {}
+        std::string nodeType;
+        std::vector<AstNodePtr> children;
+
+        bool isPrologueTypedefDecl() const;
+        void setLocations(TokenList &tokenList, int file, int line, int col);
+
+        void dumpAst(int num = 0, int indent = 0) const;
+        void createTokens1(TokenList &tokenList) {
+            //dumpAst(); // TODO: reactivate or remove
+            if (isPrologueTypedefDecl())
+                return;
+            if (!tokenList.back()) {
+                setLocations(tokenList, 0, 1, 1);
+            }
+            else
+                setLocations(tokenList, tokenList.back()->fileIndex(), tokenList.back()->linenr(), 1);
+            createTokens(tokenList);
+            if (nodeType == VarDecl || nodeType == RecordDecl || nodeType == TypedefDecl)
+                addtoken(...",5,,321,,,4,,clangimport.AstNode
+180388626496,TYPE_REF,11,,"class CppCheck::CppCheckLogger : public ErrorLogger
+{
+public:
+    CppCheckLogger(ErrorLogger& errorLogger, const Settings& settings, Suppressions& suppressions, bool useGlobalSuppressions)
+        : mErrorLogger(errorLogger)
+        , mSettings(settings)
+        , mSuppressions(suppressions)
+        , mUseGlobalSuppressions(useGlobalSuppressions)
+    {}
+
+    ~CppCheckLogger() override
+    {
+        closePlist();
+    }
+
+    void setRemarkComments(std::vector<RemarkComment> remarkComments)
+    {
+        mRemarkComments = std::move(remarkComments);
+    }
+
+    void setLocationMacros(const Token* startTok, const std::vector<std::string>& files)
+    {
+        mLocationMacros.clear();
+        for (const Token* tok = startTok; tok; tok = tok->next()) {
+            if (!tok->getMacroName().empty())
+                mLocationMacros[Location(files[tok->fileIndex()], tok->linenr())].emplace(tok->getMacroName());
+        }
+    }
+
+    void resetExitCode()
+    {
+        mExitCode = 0;
+    }
+
+    vo...",1,,92,,,11,,CppCheck.CppCheckLogger
+180388626497,TYPE_REF,1,,"class FilesDeleter {
+    public:
+        FilesDeleter() = default;
+        ~FilesDeleter() {
+            for (const std::string& fileName: mFilenames)
+                std::remove(fileName.c_str());
+        }
+        void addFile(const std::string& fileName) {
+            mFilenames.push_back(fileName);
+        }
+    private:
+        std::vector<std::string> mFilenames;
+    }",5,,288,,,1,,FilesDeleter
+180388626498,TYPE_REF,2,,"struct CPPCHECKLIB InternalError {
+    enum Type : std::uint8_t {AST, SYNTAX, UNKNOWN_MACRO, INTERNAL, LIMIT, INSTANTIATION};
+
+    InternalError(const Token *tok, std::string errorMsg, Type type = INTERNAL);
+    InternalError(const Token *tok, std::string errorMsg, std::string details, Type type = INTERNAL);
+
+    const Token *token;
+    std::string errorMessage;
+    std::string details;
+    Type type;
+    std::string id;
+}",1,,37,,,2,,InternalError
+180388626499,TYPE_REF,9,,"struct CWE {
+    explicit CWE(unsigned short cweId) : id(cweId) {}
+    unsigned short id;
+}",1,,125,,,9,,CWE
+180388626500,TYPE_REF,2,,"struct CPPCHECKLIB FileSettings {
+    explicit FileSettings(std::string path)
+        : file(std::move(path))
+    {}
+
+    FileSettings(std::string path, Standards::Language lang, std::size_t size)
+        : file(std::move(path), lang, size)
+    {}
+
+    std::string cfg;
+    FileWithDetails file;
+    const std::string& filename() const
+    {
+        return file.path();
+    }
+    // cppcheck-suppress unusedFunction
+    const std::string& sfilename() const
+    {
+        return file.spath();
+    }
+    std::string defines;
+    // TODO: handle differently
+    std::string cppcheckDefines() const {
+        return defines + (msc ? "";_MSC_VER=1900"" : """") + (useMfc ? "";__AFXWIN_H__=1"" : """");
+    }
+    std::set<std::string> undefs;
+    std::list<std::string> includePaths;
+    // only used by clang mode
+    std::list<std::string> systemIncludePaths;
+    std::string standard;
+    Platform::Type platformType = Platform::Type::Unspecified;
+    // TODO: get rid of these
+    bool msc{};
+    bool useMf...",1,,82,,,2,,FileSettings
+180388626501,TYPE_REF,-1,,"enum class Progress : std::uint8_t { Continue, Break, Skip }",9,,49,,,1,,ForwardTraversal.Progress
+180388626502,TYPE_REF,-1,,"struct Branch {
+            explicit Branch(Token* tok = nullptr) : endBlock(tok) {}
+            Token* endBlock = nullptr;
+            Analyzer::Action action = Analyzer::Action::None;
+            bool check = false;
+            bool escape = false;
+            bool escapeUnknown = false;
+            bool active = false;
+            bool isEscape() const {
+                return escape || escapeUnknown;
+            }
+            bool isConclusiveEscape() const {
+                return escape && !escapeUnknown;
+            }
+            bool isModified() const {
+                return action.isModified() && !isConclusiveEscape();
+            }
+            bool isInconclusive() const {
+                return action.isInconclusive() && !isConclusiveEscape();
+            }
+            bool isDead() const {
+                return action.isModified() || action.isInconclusive() || isEscape();
+            }
+        }",9,,70,,,14,,ForwardTraversal.Branch
+180388626503,TYPE_REF,1,,"struct ForwardTraversal {
+        enum class Progress : std::uint8_t { Continue, Break, Skip };
+        ForwardTraversal(const ValuePtr<Analyzer>& analyzer, const TokenList& tokenList, ErrorLogger& errorLogger, const Settings& settings)
+            : analyzer(analyzer), tokenList(tokenList), errorLogger(errorLogger), settings(settings)
+        {}
+        ValuePtr<Analyzer> analyzer;
+        const TokenList& tokenList;
+        ErrorLogger& errorLogger;
+        const Settings& settings;
+        Analyzer::Action actions;
+        bool analyzeOnly{};
+        bool analyzeTerminate{};
+        Analyzer::Terminate terminate = Analyzer::Terminate::None;
+        std::vector<Token*> loopEnds;
+        int branchCount = 0;
+
+        Progress Break(Analyzer::Terminate t = Analyzer::Terminate::None) {
+            if ((!analyzeOnly || analyzeTerminate) && t != Analyzer::Terminate::None)
+                terminate = t;
+            return Progress::Break;
+        }
+
+        struct Branch {
+            e...",5,,48,,,1,,ForwardTraversal
+180388626504,TYPE_REF,-1,,"enum : std::uint8_t { Win32, x64, Unknown }",9,,509,,,4,,ProjectConfiguration.<enum>6
+180388626505,TYPE_REF,1,,"struct ProjectConfiguration {
+        explicit ProjectConfiguration(const tinyxml2::XMLElement *cfg) {
+            const char *a = cfg->Attribute(""Include"");
+            if (a)
+                name = a;
+            for (const tinyxml2::XMLElement *e = cfg->FirstChildElement(); e; e = e->NextSiblingElement()) {
+                const char * const text = e->GetText();
+                if (!text)
+                    continue;
+                const char * ename = e->Name();
+                if (std::strcmp(ename,""Configuration"")==0)
+                    configuration = text;
+                else if (std::strcmp(ename,""Platform"")==0) {
+                    platformStr = text;
+                    if (platformStr == ""Win32"")
+                        platform = Win32;
+                    else if (platformStr == ""x64"")
+                        platform = x64;
+                    else
+                        platform = Unknown;
+                }
+            }
+        }
+        std::string name;
+    ...",5,,484,,,1,,ProjectConfiguration
+180388626506,TYPE_REF,2,,"struct ItemDefinitionGroup {
+        explicit ItemDefinitionGroup(const tinyxml2::XMLElement *idg, std::string includePaths) : additionalIncludePaths(std::move(includePaths)) {
+            const char *condAttr = idg->Attribute(""Condition"");
+            if (condAttr)
+                condition = condAttr;
+            for (const tinyxml2::XMLElement *e1 = idg->FirstChildElement(); e1; e1 = e1->NextSiblingElement()) {
+                const char* name = e1->Name();
+                if (std::strcmp(name, ""ClCompile"") == 0) {
+                    enhancedInstructionSet = ""StreamingSIMDExtensions2"";
+                    for (const tinyxml2::XMLElement *e = e1->FirstChildElement(); e; e = e->NextSiblingElement()) {
+                        const char * const text = e->GetText();
+                        if (!text)
+                            continue;
+                        const char * const ename = e->Name();
+                        if (std::strcmp(ename, ""PreprocessorDefinitions"") == 0)
+     ...",5,,513,,,2,,ItemDefinitionGroup
+180388626507,TYPE_REF,1,,"struct Interval {
+        std::vector<MathLib::bigint> minvalue, maxvalue;
+        std::vector<const ValueFlow::Value*> minRef, maxRef;
+
+        void setMinValue(MathLib::bigint x, const ValueFlow::Value* ref = nullptr)
+        {
+            minvalue = {x};
+            if (ref)
+                minRef = {ref};
+        }
+
+        void setMaxValue(MathLib::bigint x, const ValueFlow::Value* ref = nullptr)
+        {
+            maxvalue = {x};
+            if (ref)
+                maxRef = {ref};
+        }
+
+        bool isLessThan(MathLib::bigint x, std::vector<const ValueFlow::Value*>* ref = nullptr) const
+        {
+            if (!this->maxvalue.empty() && this->maxvalue.front() < x) {
+                if (ref)
+                    *ref = maxRef;
+                return true;
+            }
+            return false;
+        }
+
+        bool isGreaterThan(MathLib::bigint x, std::vector<const ValueFlow::Value*>* ref = nullptr) const
+        {
+            if (!this->minvalue.empty() && this->m...",5,,52,,,1,,Interval
+180388626508,TYPE_REF,1,,"struct IntegralInferModel : InferModel {
+        bool match(const ValueFlow::Value& value) const override {
+            return value.isIntValue();
+        }
+        ValueFlow::Value yield(MathLib::bigint value) const override
+        {
+            ValueFlow::Value result(value);
+            result.valueType = ValueFlow::Value::ValueType::INT;
+            result.setKnown();
+            return result;
+        }
+    }",5,,393,,,1,,IntegralInferModel
+180388626509,TYPE_REF,4,,"struct InferModel {
+    virtual bool match(const ValueFlow::Value& value) const = 0;
+    virtual ValueFlow::Value yield(MathLib::bigint value) const = 0;
+    virtual ~InferModel() = default;
+    InferModel(const InferModel&) = default;
+protected:
+    InferModel() = default;
+}",1,,37,,,4,,InferModel
+180388626510,TYPE_REF,-1,,"struct Platform {
+        const PlatformType *platform_type(const std::string &name) const {
+            const auto it = utils::as_const(mPlatformTypes).find(name);
+            return (it != mPlatformTypes.end()) ? &(it->second) : nullptr;
+        }
+        std::map<std::string, PlatformType> mPlatformTypes;
+    }",5,,47,,,1,,Library.LibraryData.Platform
+180388626511,TYPE_REF,-1,,"class ExportedFunctions {
+    public:
+        void addPrefix(std::string prefix) {
+            mPrefixes.insert(std::move(prefix));
+        }
+        void addSuffix(std::string suffix) {
+            mSuffixes.insert(std::move(suffix));
+        }
+        bool isPrefix(const std::string& prefix) const {
+            return (mPrefixes.find(prefix) != mPrefixes.end());
+        }
+        bool isSuffix(const std::string& suffix) const {
+            return (mSuffixes.find(suffix) != mSuffixes.end());
+        }
+
+    private:
+        std::set<std::string> mPrefixes;
+        std::set<std::string> mSuffixes;
+    }",5,,55,,,2,,Library.LibraryData.ExportedFunctions
+180388626512,TYPE_REF,-1,,"class CodeBlock {
+    public:
+        CodeBlock() = default;
+
+        void setStart(const char* s) {
+            mStart = s;
+        }
+        void setEnd(const char* e) {
+            mEnd = e;
+        }
+        void setOffset(const int o) {
+            mOffset = o;
+        }
+        void addBlock(const char* blockName) {
+            mBlocks.insert(blockName);
+        }
+        const std::string& start() const {
+            return mStart;
+        }
+        const std::string& end() const {
+            return mEnd;
+        }
+        int offset() const {
+            return mOffset;
+        }
+        bool isBlock(const std::string& blockName) const {
+            return mBlocks.find(blockName) != mBlocks.end();
+        }
+
+    private:
+        std::string mStart;
+        std::string mEnd;
+        int mOffset{};
+        std::set<std::string> mBlocks;
+    }",5,,75,,,3,,Library.LibraryData.CodeBlock
+180388626513,TYPE_REF,-1,,"enum class FalseTrueMaybe : std::uint8_t { False, True, Maybe }",5,,111,,,4,,Library.LibraryData.FalseTrueMaybe
+180388626514,TYPE_REF,1,,"struct Library::LibraryData
+{
+    struct Platform {
+        const PlatformType *platform_type(const std::string &name) const {
+            const auto it = utils::as_const(mPlatformTypes).find(name);
+            return (it != mPlatformTypes.end()) ? &(it->second) : nullptr;
+        }
+        std::map<std::string, PlatformType> mPlatformTypes;
+    };
+
+    class ExportedFunctions {
+    public:
+        void addPrefix(std::string prefix) {
+            mPrefixes.insert(std::move(prefix));
+        }
+        void addSuffix(std::string suffix) {
+            mSuffixes.insert(std::move(suffix));
+        }
+        bool isPrefix(const std::string& prefix) const {
+            return (mPrefixes.find(prefix) != mPrefixes.end());
+        }
+        bool isSuffix(const std::string& suffix) const {
+            return (mSuffixes.find(suffix) != mSuffixes.end());
+        }
+
+    private:
+        std::set<std::string> mPrefixes;
+        std::set<std::string> mSuffixes;
+    };
+
+    class CodeBlock {
+    pub...",1,,45,,,1,,Library.LibraryData
+180388626515,TYPE_REF,-1,,"struct Info {
+        const Token* tok;
+        ErrorPath errorPath;
+        bool known;
+    }",5,,44,,,5,,PathAnalysis.Info
+180388626516,TYPE_REF,4,,"struct PathAnalysis {
+    enum class Progress : std::uint8_t {
+        Continue,
+        Break
+    };
+    PathAnalysis(const Token* start, const Library& library)
+        : start(start), library(&library)
+    {}
+    const Token * start;
+    const Library * library;
+
+    struct Info {
+        const Token* tok;
+        ErrorPath errorPath;
+        bool known;
+    };
+
+    void forward(const std::function<Progress(const Info&)>& f) const;
+
+    Info forwardFind(std::function<bool(const Info&)> pred) const {
+        Info result{};
+        forward([&](const Info& info) {
+            if (pred(info)) {
+                result = info;
+                return Progress::Break;
+            }
+            return Progress::Continue;
+        });
+        return result;
+    }
+private:
+
+    static Progress forwardRecursive(const Token* tok, Info info, const std::function<PathAnalysis::Progress(const Info&)>& f);
+    Progress forwardRange(const Token* startToken, const Token* endToken, Info info, const st...",1,,33,,,4,,PathAnalysis
+180388626517,TYPE_REF,1,,"struct BadInlineSuppression {
+        BadInlineSuppression(std::string file, const int line, std::string msg) : file(std::move(file)), line(line), errmsg(std::move(msg)) {}
+        std::string file;
+        int line;
+        std::string errmsg;
+    }",5,,76,,,1,,BadInlineSuppression
+180388626518,TYPE_REF,-1,,"struct DirectiveToken {
+        explicit DirectiveToken(const simplecpp::Token & _tok);
+        int line;
+        int column;
+        std::string tokStr;
+    }",5,,61,,,4,,Directive.DirectiveToken
+180388626519,TYPE_REF,4,,"struct CPPCHECKLIB Directive {
+    /** name of (possibly included) file where directive is defined */
+    std::string file;
+
+    /** line number in (possibly included) file where directive is defined */
+    unsigned int linenr;
+
+    /** the actual directive text */
+    std::string str;
+
+    struct DirectiveToken {
+        explicit DirectiveToken(const simplecpp::Token & _tok);
+        int line;
+        int column;
+        std::string tokStr;
+    };
+
+    std::vector<DirectiveToken> strTokens;
+
+    /** record a directive (possibly filtering src) */
+    Directive(const simplecpp::Location & _loc, std::string _str);
+    Directive(std::string _file, int _linenr, std::string _str);
+}",1,,51,,,4,,Directive
+180388626520,TYPE_REF,1,,"struct assign {
+        template<class T, class U>
+        void operator()(T& x, const U& y) const
+        {
+            x = static_cast<T>(y);
+        }
+    }",5,,591,,,1,,assign
+180388626521,TYPE_REF,1,,"struct Executor {
+        ProgramMemory* pm;
+        const Settings& settings;
+        int fdepth = 4;
+        int depth = 10;
+
+        Executor(ProgramMemory* pm, const Settings& settings) : pm(pm), settings(settings)
+        {
+            assert(pm != nullptr);
+        }
+
+        static ValueFlow::Value unknown() {
+            return ValueFlow::Value::unknown();
+        }
+
+        std::unordered_map<nonneg int, ValueFlow::Value> executeAll(const std::vector<const Token*>& toks,
+                                                                    const bool* b = nullptr) const
+        {
+            std::unordered_map<nonneg int, ValueFlow::Value> result;
+            auto state = *this;
+            for (const Token* tok : toks) {
+                ValueFlow::Value r = state.execute(tok);
+                if (r.isUninitValue())
+                    continue;
+                const bool brk = b && isTrueOrFalse(r, *b);
+                result.emplace(tok->exprId(), std::move(r));
+           ...",5,,1236,,,1,,Executor
+180388626522,TYPE_REF,-1,,"struct Hash {
+        std::size_t operator()(ExprIdToken etok) const;
+    }",5,,95,,,16,,ExprIdToken.Hash
+180388626523,TYPE_REF,4,,"struct ExprIdToken {
+    const Token* tok = nullptr;
+    nonneg int exprid = 0;
+
+    ExprIdToken() = default;
+    // cppcheck-suppress noExplicitConstructor
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    ExprIdToken(const Token* tok);
+    // TODO: Make this constructor only available from ProgramMemory
+    // cppcheck-suppress noExplicitConstructor
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    ExprIdToken(nonneg int exprid) : exprid(exprid) {}
+
+    nonneg int getExpressionId() const;
+
+    bool operator==(const ExprIdToken& rhs) const {
+        return getExpressionId() == rhs.getExpressionId();
+    }
+
+    bool operator<(const ExprIdToken& rhs) const {
+        return getExpressionId() < rhs.getExpressionId();
+    }
+
+    template<class T, class U>
+    friend bool operator!=(const T& lhs, const U& rhs)
+    {
+        return !(lhs == rhs);
+    }
+
+    template<class T, class U>
+    friend bool operator<=(const T& lhs, const U& rhs)
+    {
+        return !(lhs > rhs);
+    }
+...",1,,40,,,4,,ExprIdToken
+180388626524,TYPE_REF,5,,"struct CPPCHECKLIB ProgramMemory {
+    using Map = std::unordered_map<ExprIdToken, ValueFlow::Value, ExprIdToken::Hash>;
+
+    ProgramMemory() : mValues(new Map()) {}
+
+    explicit ProgramMemory(Map values) : mValues(new Map(std::move(values))) {}
+
+    void setValue(const Token* expr, const ValueFlow::Value& value);
+    const ValueFlow::Value* getValue(nonneg int exprid, bool impossible = false) const;
+
+    bool getIntValue(nonneg int exprid, MathLib::bigint& result) const;
+    void setIntValue(const Token* expr, MathLib::bigint value, bool impossible = false);
+
+    bool getContainerSizeValue(nonneg int exprid, MathLib::bigint& result) const;
+    bool getContainerEmptyValue(nonneg int exprid, MathLib::bigint& result) const;
+    void setContainerSizeValue(const Token* expr, MathLib::bigint value, bool isEqual = true);
+
+    void setUnknown(const Token* expr);
+
+    bool getTokValue(nonneg int exprid, const Token*& result) const;
+    bool hasValue(nonneg int exprid);
+
+    const ValueFlow...",1,,100,,,5,,ProgramMemory
+180388626525,TYPE_REF,6,,"struct ProgramMemoryState {
+    ProgramMemory state;
+    std::map<nonneg int, const Token*> origins;
+    const Settings& settings;
+
+    explicit ProgramMemoryState(const Settings& s);
+
+    void replace(ProgramMemory pm, const Token* origin = nullptr);
+
+    void addState(const Token* tok, const ProgramMemory::Map& vars);
+
+    void assume(const Token* tok, bool b, bool isEmpty = false);
+
+    void removeModifiedVars(const Token* tok);
+
+    ProgramMemory get(const Token* tok, const Token* ctx, const ProgramMemory::Map& vars) const;
+}",1,,157,,,6,,ProgramMemoryState
+180388626526,TYPE_REF,1,,"struct ReverseTraversal {
+        ReverseTraversal(const ValuePtr<Analyzer>& analyzer, const TokenList& tokenlist, ErrorLogger& errorLogger, const Settings& settings)
+            : analyzer(analyzer), tokenlist(tokenlist), errorLogger(errorLogger), settings(settings)
+        {}
+        ValuePtr<Analyzer> analyzer;
+        const TokenList& tokenlist;
+        ErrorLogger& errorLogger;
+        const Settings& settings;
+
+        std::pair<bool, bool> evalCond(const Token* tok) const {
+            std::vector<MathLib::bigint> result = analyzer->evaluate(tok);
+            // TODO: We should convert to bool
+            const bool checkThen = std::any_of(result.cbegin(), result.cend(), [](MathLib::bigint x) {
+                return x == 1;
+            });
+            const bool checkElse = std::any_of(result.cbegin(), result.cend(), [](MathLib::bigint x) {
+                return x == 0;
+            });
+            return std::make_pair(checkThen, checkElse);
+        }
+
+        bool update(T...",5,,39,,,1,,ReverseTraversal
+180388626527,TYPE_REF,3,,"struct SourceLocation {
+#if CPPCHECK_HAS_SOURCE_LOCATION_INTRINSICS
+    static SourceLocation current(std::uint_least32_t line = __builtin_LINE(),
+                                  std::uint_least32_t column = __builtin_COLUMN(),
+                                  const char* file_name = __builtin_FILE(),
+                                  const char* function_name = __builtin_FUNCTION())
+    {
+        SourceLocation result{};
+        result.m_line = line;
+        result.m_column = column;
+        result.m_file_name = file_name;
+        result.m_function_name = function_name;
+        return result;
+    }
+#else
+    static SourceLocation current() {
+        return SourceLocation();
+    }
+#endif
+    std::uint_least32_t m_line = 0;
+    std::uint_least32_t m_column = 0;
+    const char* m_file_name = """";
+    const char* m_function_name = """";
+    std::uint_least32_t line() const {
+        return m_line;
+    }
+    std::uint_least32_t column() const {
+        return m_column;
+    }
+    const c...",1,,60,,,3,,SourceLocation
+180388626528,TYPE_REF,1,,"struct CPPCHECKLIB Standards {
+    enum Language : std::uint8_t { None, C, CPP };
+
+    /** C code standard */
+    enum cstd_t : std::uint8_t { C89, C99, C11, C17, C23, CLatest = C23 } c = CLatest;
+
+    /** C++ code standard */
+    enum cppstd_t : std::uint8_t { CPP03, CPP11, CPP14, CPP17, CPP20, CPP23, CPP26, CPPLatest = CPP26 } cpp = CPPLatest;
+
+    /** --std value given on command line */
+    std::string stdValueC;
+
+    /** --std value given on command line */
+    std::string stdValueCPP;
+
+    bool setC(std::string str);
+    std::string getC() const;
+    static std::string getC(cstd_t c_std);
+    static cstd_t getC(const std::string &std);
+    bool setCPP(std::string str);
+    std::string getCPP() const;
+    static std::string getCPP(cppstd_t std);
+    static cppstd_t getCPP(const std::string &std);
+    bool setStd(const std::string& str);
+}",1,,37,,,1,,Standards
+180388626529,TYPE_REF,7,,"struct Suppressions
+{
+    /** @brief suppress message (--suppressions) */
+    SuppressionList nomsg;
+    /** @brief suppress exitcode */
+    SuppressionList nofail;
+}",1,,288,,,7,,Suppressions
+180388626530,TYPE_REF,1,,"struct ExprIdKey {
+        std::string parentOp;
+        nonneg int operand1;
+        nonneg int operand2;
+        bool operator<(const ExprIdKey& k) const {
+            return std::tie(parentOp, operand1, operand2) < std::tie(k.parentOp, k.operand1, k.operand2);
+        }
+    }",5,,1571,,,1,,ExprIdKey
+180388626531,TYPE_REF,11,,"struct Dimension {
+    const Token* tok{};    ///< size token
+    MathLib::bigint num{}; ///< (assumed) dimension length when size is a number, 0 if not known
+    bool known = true;     ///< Known size
+}",1,,66,,,11,,Dimension
+180388626532,TYPE_REF,13,,"struct CPPCHECKLIB Enumerator {
+    explicit Enumerator(const Scope * scope_) : scope(scope_) {}
+    const Scope * scope;
+    const Token* name{};
+    MathLib::bigint value{};
+    const Token* start{};
+    const Token* end{};
+    bool value_known{};
+}",1,,162,,,13,,Enumerator
+180388626533,TYPE_REF,1,,"class FindToken {
+    public:
+        explicit FindToken(const Token *token) : mToken(token) {}
+        bool operator()(const TemplateSimplifier::TokenAndName &tokenAndName) const {
+            return tokenAndName.token() == mToken;
+        }
+    private:
+        const Token * const mToken;
+    }",5,,67,,,1,,FindToken
+180388626534,TYPE_REF,2,,"class FindName {
+    public:
+        explicit FindName(std::string name) : mName(std::move(name)) {}
+        bool operator()(const TemplateSimplifier::TokenAndName &tokenAndName) const {
+            return tokenAndName.name() == mName;
+        }
+    private:
+        const std::string mName;
+    }",5,,77,,,2,,FindName
+180388626535,TYPE_REF,3,,"class FindFullName {
+    public:
+        explicit FindFullName(std::string fullName) : mFullName(std::move(fullName)) {}
+        bool operator()(const TemplateSimplifier::TokenAndName &tokenAndName) const {
+            return tokenAndName.fullName() == mFullName;
+        }
+    private:
+        const std::string mFullName;
+    }",5,,87,,,3,,FindFullName
+180388626536,TYPE_REF,39,,"struct newInstantiation {
+    newInstantiation(Token* t, std::string s) : token(t), scope(std::move(s)) {}
+    Token* token;
+    std::string scope;
+}",1,,1625,,,39,,newInstantiation
+180388626537,TYPE_REF,3,,"struct TimerResultsData {
+    std::clock_t mClocks{};
+    long mNumberOfResults{};
+
+    double seconds() const {
+        const double ret = (double)((unsigned long)mClocks) / (double)CLOCKS_PER_SEC;
+        return ret;
+    }
+}",1,,49,,,3,,TimerResultsData
+180388626538,TYPE_REF,1,,"struct less {
+        template<class T, class U>
+        bool operator()(const T &x, const U &y) const {
+            return x < y;
+        }
+    }",5,,52,,,1,,less
+180388626539,TYPE_REF,-1,,"union {
+        const Function *mFunction;
+        const Variable *mVariable;
+        const ::Type* mType;
+        const Enumerator *mEnumerator;
+    }",5,,93,,,13,,TokenImpl.<type>0
+180388626540,TYPE_REF,-1,,"struct CppcheckAttributes {
+        enum Type : std::uint8_t { LOW, HIGH } type = LOW;
+        MathLib::bigint value{};
+        CppcheckAttributes* next{};
+    }",5,,120,,,21,,TokenImpl.CppcheckAttributes
+180388626541,TYPE_REF,11,,"struct ScopeInfo2 {
+    ScopeInfo2(std::string name_, const Token *bodyEnd_, std::set<std::string> usingNamespaces_ = std::set<std::string>()) : name(std::move(name_)), bodyEnd(bodyEnd_), usingNamespaces(std::move(usingNamespaces_)) {}
+    std::string name;
+    const Token* const bodyEnd{};
+    std::set<std::string> usingNamespaces;
+}",1,,56,,,11,,ScopeInfo2
+180388626542,TYPE_REF,13,,"struct TokenImpl {
+    nonneg int mVarId{};
+    nonneg int mFileIndex{};
+    nonneg int mLineNumber{};
+    nonneg int mColumn{};
+    nonneg int mExprId{};
+
+    /**
+     * A value from 0-100 that provides a rough idea about where in the token
+     * list this token is located.
+     */
+    nonneg int mProgressValue{};
+
+    /**
+     * Token index. Position in token list
+     */
+    nonneg int mIndex{};
+
+    /** Bitfield bit count. */
+    unsigned char mBits{};
+
+    // AST..
+    Token* mAstOperand1{};
+    Token* mAstOperand2{};
+    Token* mAstParent{};
+
+    // symbol database information
+    const Scope* mScope{};
+    union {
+        const Function *mFunction;
+        const Variable *mVariable;
+        const ::Type* mType;
+        const Enumerator *mEnumerator;
+    };
+
+    // original name like size_t
+    std::string* mOriginalName{};
+
+    // If this token came from a macro replacement list, this is the name of that macro
+    std::string* mMacroName{};
+
+    // ValueType
+    ValueType* m...",1,,65,,,13,,TokenImpl
+180388626543,TYPE_REF,-1,,"enum Type : std::uint8_t { Global, Namespace, Record, MemberFunction, Other }",9,,2382,,,1,,ScopeInfo3.Type
+180388626544,TYPE_REF,1,,"struct VarIdScopeInfo {
+        VarIdScopeInfo() = default;
+        VarIdScopeInfo(bool isExecutable, bool isStructInit, bool isEnum, nonneg int startVarid)
+            : isExecutable(isExecutable), isStructInit(isStructInit), isEnum(isEnum), startVarid(startVarid) {}
+
+        const bool isExecutable{};
+        const bool isStructInit{};
+        const bool isEnum{};
+        const nonneg int startVarid{};
+    }",5,,68,,,1,,VarIdScopeInfo
+180388626545,TYPE_REF,1,,"struct Space {
+        std::string className;
+        const Token* bodyEnd{};  // for body contains typedef define
+        const Token* bodyEnd2{}; // for body contains typedef using
+        bool isNamespace{};
+        std::set<std::string> recordTypes;
+    }",5,,355,,,1,,Space
+180388626546,TYPE_REF,1,,"class TypedefSimplifier {
+    private:
+        Token* mTypedefToken;  // The ""typedef"" token
+        Token* mEndToken{nullptr};  // Semicolon
+        std::pair<Token*, Token*> mRangeType;
+        std::pair<Token*, Token*> mRangeTypeQualifiers;
+        std::pair<Token*, Token*> mRangeAfterVar;
+        Token* mNameToken{nullptr};
+        bool mFail = false;
+        bool mReplaceFailed = false;
+        bool mUsed = false;
+
+    public:
+        explicit TypedefSimplifier(Token* typedefToken) : mTypedefToken(typedefToken) {
+            Token* start = typedefToken->next();
+            if (Token::simpleMatch(start, ""typename""))
+                start = start->next();
+
+            // TODO handle unnamed structs etc
+            if (Token::Match(start, ""const| enum|struct|union|class %name%| {"")) {
+                const std::pair<Token*, Token*> rangeBefore(start, Token::findsimplematch(start, ""{""));
+
+                // find typedef name token
+                Token* nameToken = rangeBefore.seco...",5,,573,,,1,,TypedefSimplifier
+180388626547,TYPE_REF,1,,"struct ScopeInfo3 {
+        enum Type : std::uint8_t { Global, Namespace, Record, MemberFunction, Other };
+        ScopeInfo3() : parent(nullptr), type(Global), bodyStart(nullptr), bodyEnd(nullptr) {}
+        ScopeInfo3(ScopeInfo3 *parent_, Type type_, std::string name_, const Token *bodyStart_, const Token *bodyEnd_)
+            : parent(parent_), type(type_), name(std::move(name_)), bodyStart(bodyStart_), bodyEnd(bodyEnd_) {
+            if (name.empty())
+                return;
+            fullName = name;
+            ScopeInfo3 *scope = parent;
+            while (scope && scope->parent) {
+                if (scope->name.empty())
+                    break;
+                fullName = scope->name + "" :: "" + fullName;
+                scope = scope->parent;
+            }
+        }
+        ScopeInfo3 *parent;
+        std::list<ScopeInfo3> children;
+        Type type;
+        std::string fullName;
+        std::string name;
+        const Token * bodyStart;
+        const Token * bodyEnd;
+...",5,,2381,,,1,,ScopeInfo3
+180388626548,TYPE_REF,1,,"class VariableMap {
+    private:
+        std::unordered_map<std::string, nonneg int> mVariableId;
+        std::unordered_map<std::string, nonneg int> mVariableId_global;
+        std::stack<std::vector<std::pair<std::string, nonneg int>>> mScopeInfo;
+        mutable nonneg int mVarId{};
+    public:
+        VariableMap() = default;
+        void enterScope();
+        bool leaveScope();
+        void addVariable(const std::string& varname, bool globalNamespace);
+        bool hasVariable(const std::string& varname) const {
+            return mVariableId.find(varname) != mVariableId.end();
+        }
+
+        const std::unordered_map<std::string, nonneg int>& map(bool global) const {
+            return global ? mVariableId_global : mVariableId;
+        }
+        nonneg int& getVarId() {
+            return mVarId;
+        }
+    }",5,,4119,,,1,,VariableMap
+180388626549,TYPE_REF,1,,"struct Member {
+        Member(std::list<std::string> s, std::list<const Token *> ns, Token *t) : usingnamespaces(std::move(ns)), scope(std::move(s)), tok(t) {}
+        std::list<const Token *> usingnamespaces;
+        std::list<std::string> scope;
+        Token *tok;
+    }",5,,4896,,,1,,Member
+180388626550,TYPE_REF,1,,"struct triplet {
+        triplet(const char* m, const char* u) :  mbcs(m), unicode(u) {}
+        std::string mbcs, unicode;
+    }",5,,10094,,,1,,triplet
+180388626551,TYPE_REF,1,,"struct AST_state {
+        std::stack<Token*> op;
+        int depth{};
+        int inArrayAssignment{};
+        bool cpp;
+        int assign{};
+        bool inCase{}; // true from case to :
+        bool inGeneric{};
+        bool stopAtColon{}; // help to properly parse ternary operators
+        const Token* functionCallEndPar{};
+        explicit AST_state(bool cpp) : cpp(cpp) {}
+    }",5,,455,,,1,,AST_state
+180388626552,TYPE_REF,1,,"struct OnException {
+        std::function<void()> f;
+
+        ~OnException() {
+#ifndef _MSC_VER
+            if (std::uncaught_exception())
+                f();
+#endif
+        }
+    }",5,,1872,,,1,,OnException
+180388626553,TYPE_REF,5,,"struct TokensFrontBack {
+    explicit TokensFrontBack(const TokenList& list) : list(list) {}
+    Token *front{};
+    Token* back{};
+    const TokenList& list;
+}",1,,46,,,5,,TokensFrontBack
+180388626554,TYPE_REF,1,,"struct SelectMapKeys {
+    template<class Pair>
+    // NOLINTNEXTLINE(readability-const-return-type) - false positive
+    typename Pair::first_type operator()(const Pair& p) const {
+        return p.first;
+    }
+}",1,,39,,,1,,SelectMapKeys
+180388626555,TYPE_REF,2,,"struct SelectMapValues {
+    template<class Pair>
+    typename Pair::second_type operator()(const Pair& p) const {
+        return p.second;
+    }
+}",1,,47,,,2,,SelectMapValues
+180388626556,TYPE_REF,3,,"struct OnExit {
+    std::function<void()> f;
+
+    ~OnExit() {
+        f();
+    }
+}",1,,54,,,3,,OnExit
+180388626557,TYPE_REF,8,,"struct EnumClassHash {
+    template<typename T>
+    std::size_t operator()(T t) const
+    {
+        return static_cast<std::size_t>(t);
+    }
+}",1,,87,,,8,,EnumClassHash
+180388626558,TYPE_REF,-1,,"struct Condition {
+        const Token* vartok{};
+        std::list<ValueFlow::Value> true_values;
+        std::list<ValueFlow::Value> false_values;
+        bool inverted = false;
+        // Whether to insert impossible values for the condition or only use possible values
+        bool impossible = true;
+
+        bool isBool() const {
+            return astIsBool(vartok);
+        }
+
+        static MathLib::bigint findPath(const std::list<ValueFlow::Value>& values)
+        {
+            auto it = std::find_if(values.cbegin(), values.cend(), [](const ValueFlow::Value& v) {
+                return v.path > 0;
+            });
+            if (it == values.end())
+                return 0;
+            assert(std::all_of(it, values.end(), [&](const ValueFlow::Value& v) {
+                return v.path == 0 || v.path == it->path;
+            }));
+            return it->path;
+        }
+
+        MathLib::bigint getPath() const
+        {
+            assert(std::abs(findPath(true_values) - findPath...",5,,4254,,,1,,ConditionHandler.Condition
+180388626559,TYPE_REF,48,,"enum class LifetimeCapture : std::uint8_t { Undefined, ByValue, ByReference }",1,,1355,,,48,,LifetimeCapture
+180388626560,TYPE_REF,75,,"struct LifetimeStore {
+    const Token* argtok{};
+    std::string message;
+    ValueFlow::Value::LifetimeKind type = ValueFlow::Value::LifetimeKind::Object;
+    ErrorPath errorPath;
+    bool inconclusive{};
+    bool forward = true;
+
+    LifetimeStore() = default;
+
+    LifetimeStore(const Token* argtok,
+                  std::string message,
+                  ValueFlow::Value::LifetimeKind type = ValueFlow::Value::LifetimeKind::Object,
+                  bool inconclusive = false)
+        : argtok(argtok),
+        message(std::move(message)),
+        type(type),
+        inconclusive(inconclusive)
+    {}
+
+    template<class F>
+    static void forEach(const TokenList& tokenlist,
+                        ErrorLogger& errorLogger,
+                        const Settings& settings,
+                        const std::vector<const Token*>& argtoks,
+                        const std::string& message,
+                        ValueFlow::Value::LifetimeKind type,
+                        F f) {
+   ...",1,,2002,,,75,,LifetimeStore
+180388626561,TYPE_REF,83,,"struct Lambda {
+    explicit Lambda(const Token* tok)
+    {
+        if (!Token::simpleMatch(tok, ""["") || !tok->link())
+            return;
+        capture = tok;
+
+        if (Token::simpleMatch(capture->link(), ""] ("")) {
+            arguments = capture->link()->next();
+        }
+        const Token * afterArguments = arguments ? arguments->link()->next() : capture->link()->next();
+        if (afterArguments && afterArguments->originalName() == ""->"") {
+            returnTok = afterArguments->next();
+            bodyTok = Token::findsimplematch(returnTok, ""{"");
+        } else if (Token::simpleMatch(afterArguments, ""{"")) {
+            bodyTok = afterArguments;
+        }
+        for (const Token* c:getCaptures()) {
+            if (Token::Match(c, ""this !!."")) {
+                explicitCaptures[c->variable()] = std::make_pair(c, LifetimeCapture::ByReference);
+            } else if (Token::simpleMatch(c, ""* this"")) {
+                explicitCaptures[c->next()->variable()] = std::make_pair...",1,,2734,,,83,,Lambda
+180388626562,TYPE_REF,106,,"struct SymbolicInferModel : InferModel {
+    const Token* expr;
+    explicit SymbolicInferModel(const Token* tok) : expr(tok) {
+        assert(expr->exprId() != 0);
+    }
+    bool match(const ValueFlow::Value& value) const override
+    {
+        return value.isSymbolicValue() && value.tokvalue && value.tokvalue->exprId() == expr->exprId();
+    }
+    ValueFlow::Value yield(MathLib::bigint value) const override
+    {
+        ValueFlow::Value result(value);
+        result.valueType = ValueFlow::Value::ValueType::SYMBOLIC;
+        result.tokvalue = expr;
+        result.setKnown();
+        return result;
+    }
+}",1,,3669,,,106,,SymbolicInferModel
+180388626563,TYPE_REF,125,,"struct ConditionHandler {
+    struct Condition {
+        const Token* vartok{};
+        std::list<ValueFlow::Value> true_values;
+        std::list<ValueFlow::Value> false_values;
+        bool inverted = false;
+        // Whether to insert impossible values for the condition or only use possible values
+        bool impossible = true;
+
+        bool isBool() const {
+            return astIsBool(vartok);
+        }
+
+        static MathLib::bigint findPath(const std::list<ValueFlow::Value>& values)
+        {
+            auto it = std::find_if(values.cbegin(), values.cend(), [](const ValueFlow::Value& v) {
+                return v.path > 0;
+            });
+            if (it == values.end())
+                return 0;
+            assert(std::all_of(it, values.end(), [&](const ValueFlow::Value& v) {
+                return v.path == 0 || v.path == it->path;
+            }));
+            return it->path;
+        }
+
+        MathLib::bigint getPath() const
+        {
+            assert(std::abs(fi...",1,,4253,,,125,,ConditionHandler
+180388626564,TYPE_REF,127,,"struct SimpleConditionHandler : ConditionHandler {
+    std::vector<Condition> parse(const Token* tok, const Settings& /*settings*/) const override {
+
+        std::vector<Condition> conds;
+        parseCompareEachInt(tok, [&](const Token* vartok, ValueFlow::Value true_value, ValueFlow::Value false_value) {
+            if (vartok->hasKnownIntValue())
+                return;
+            if (vartok->str() == ""="" && vartok->astOperand1() && vartok->astOperand2())
+                vartok = vartok->astOperand1();
+            Condition cond;
+            cond.true_values.push_back(std::move(true_value));
+            cond.false_values.push_back(std::move(false_value));
+            cond.vartok = vartok;
+            conds.push_back(std::move(cond));
+        });
+        if (!conds.empty())
+            return conds;
+
+        const Token* vartok = nullptr;
+
+        if (tok->str() == ""!"") {
+            vartok = tok->astOperand1();
+
+        } else if (tok->astParent() && (Token::Match(tok->astParent(...",1,,4882,,,127,,SimpleConditionHandler
+180388626565,TYPE_REF,128,,"struct IteratorInferModel : InferModel {
+    virtual ValueFlow::Value::ValueType getType() const = 0;
+    bool match(const ValueFlow::Value& value) const override {
+        return value.valueType == getType();
+    }
+    ValueFlow::Value yield(MathLib::bigint value) const override
+    {
+        ValueFlow::Value result(value);
+        result.valueType = getType();
+        result.setKnown();
+        return result;
+    }
+}",1,,4924,,,128,,IteratorInferModel
+180388626566,TYPE_REF,129,,"struct EndIteratorInferModel : IteratorInferModel {
+    ValueFlow::Value::ValueType getType() const override {
+        return ValueFlow::Value::ValueType::ITERATOR_END;
+    }
+}",1,,4938,,,129,,EndIteratorInferModel
+180388626567,TYPE_REF,130,,"struct StartIteratorInferModel : IteratorInferModel {
+    ValueFlow::Value::ValueType getType() const override {
+        return ValueFlow::Value::ValueType::ITERATOR_END;
+    }
+}",1,,4944,,,130,,StartIteratorInferModel
+180388626568,TYPE_REF,134,,"struct SymbolicConditionHandler : SimpleConditionHandler {
+
+    static bool isNegatedBool(const Token* tok)
+    {
+        if (!Token::simpleMatch(tok, ""!""))
+            return false;
+        return (astIsBool(tok->astOperand1()));
+    }
+
+    static const Token* skipNot(const Token* tok)
+    {
+        if (!Token::simpleMatch(tok, ""!""))
+            return tok;
+        return tok->astOperand1();
+    }
+
+    std::vector<Condition> parse(const Token* tok, const Settings& settings) const override
+    {
+        if (!Token::Match(tok, ""%comp%""))
+            return {};
+        if (tok->hasKnownIntValue())
+            return {};
+        if (!tok->astOperand1() || tok->astOperand1()->hasKnownIntValue() || tok->astOperand1()->isLiteral())
+            return {};
+        if (!tok->astOperand2() || tok->astOperand2()->hasKnownIntValue() || tok->astOperand2()->isLiteral())
+            return {};
+        if (!isConstExpression(tok, settings.library))
+            return {};
+
+        std::vector<Condit...",1,,5014,,,134,,SymbolicConditionHandler
+180388626569,TYPE_REF,165,,"struct IteratorConditionHandler : SimpleConditionHandler {
+    std::vector<Condition> parse(const Token* tok, const Settings& /*settings*/) const override {
+        Condition cond;
+
+        if (Token::Match(tok, ""==|!="")) {
+            if (!tok->astOperand1() || !tok->astOperand2())
+                return {};
+
+            constexpr ValueFlow::Value::ValueKind kind = ValueFlow::Value::ValueKind::Known;
+            std::list<ValueFlow::Value> values = getIteratorValues(tok->astOperand1()->values(), &kind);
+            if (!values.empty()) {
+                cond.vartok = tok->astOperand2();
+            } else {
+                values = getIteratorValues(tok->astOperand2()->values(), &kind);
+                if (!values.empty())
+                    cond.vartok = tok->astOperand1();
+            }
+            for (ValueFlow::Value& v:values) {
+                v.setPossible();
+                v.assumeCondition(tok);
+            }
+            cond.true_values = values;
+            cond.false...",1,,6285,,,165,,IteratorConditionHandler
+180388626570,TYPE_REF,177,,"struct ContainerConditionHandler : ConditionHandler {
+    std::vector<Condition> parse(const Token* tok, const Settings& settings) const override
+    {
+        std::vector<Condition> conds;
+        parseCompareEachInt(tok, [&](const Token* vartok, ValueFlow::Value true_value, ValueFlow::Value false_value) {
+            vartok = settings.library.getContainerFromYield(vartok, Library::Container::Yield::SIZE);
+            if (!vartok)
+                return;
+            true_value.valueType = ValueFlow::Value::ValueType::CONTAINER_SIZE;
+            false_value.valueType = ValueFlow::Value::ValueType::CONTAINER_SIZE;
+            Condition cond;
+            cond.true_values.push_back(std::move(true_value));
+            cond.false_values.push_back(std::move(false_value));
+            cond.vartok = vartok;
+            conds.push_back(std::move(cond));
+        });
+        if (!conds.empty())
+            return conds;
+
+        const Token* vartok = nullptr;
+
+        // Empty check
+        if...",1,,6684,,,177,,ContainerConditionHandler
+180388626571,TYPE_REF,184,,"struct ValueFlowState {
+    explicit ValueFlowState(TokenList& tokenlist,
+                            SymbolDatabase& symboldatabase,
+                            ErrorLogger& errorLogger,
+                            const Settings& settings)
+        : tokenlist(tokenlist), symboldatabase(symboldatabase), errorLogger(errorLogger), settings(settings)
+    {}
+
+    TokenList& tokenlist;
+    SymbolDatabase& symboldatabase;
+    ErrorLogger& errorLogger;
+    const Settings& settings;
+    std::set<const Scope*> skippedFunctions;
+}",1,,7043,,,184,,ValueFlowState
+180388626572,TYPE_REF,185,,"struct ValueFlowPass {
+    ValueFlowPass() = default;
+    ValueFlowPass(const ValueFlowPass&) = default;
+    // Name of pass
+    virtual const char* name() const = 0;
+    // Run the pass
+    virtual void run(const ValueFlowState& state) const = 0;
+    // Returns true if pass needs C++
+    virtual bool cpp() const = 0;
+    virtual ~ValueFlowPass() noexcept = default;
+}",1,,7058,,,185,,ValueFlowPass
+180388626573,TYPE_REF,186,,"struct ValueFlowPassRunner {
+    using Clock = std::chrono::steady_clock;
+    using TimePoint = std::chrono::time_point<Clock>;
+    explicit ValueFlowPassRunner(ValueFlowState state, TimerResultsIntf* timerResults = nullptr)
+        : state(std::move(state)), stop(TimePoint::max()), timerResults(timerResults)
+    {
+        setSkippedFunctions();
+        setStopTime();
+    }
+
+    bool run_once(std::initializer_list<ValuePtr<ValueFlowPass>> passes) const
+    {
+        return std::any_of(passes.begin(), passes.end(), [&](const ValuePtr<ValueFlowPass>& pass) {
+            return run(pass);
+        });
+    }
+
+    bool run(std::initializer_list<ValuePtr<ValueFlowPass>> passes) const
+    {
+        std::size_t values = 0;
+        std::size_t n = state.settings.vfOptions.maxIterations;
+        while (n > 0 && values != getTotalValues()) {
+            values = getTotalValues();
+            if (std::any_of(passes.begin(), passes.end(), [&](const ValuePtr<ValueFlowPass>& pass) {
+               ...",1,,7070,,,186,,ValueFlowPassRunner
+180388626574,TYPE_REF,187,,"struct ValueFlowPassAdaptor : ValueFlowPass {
+    const char* mName = nullptr;
+    bool mCPP = false;
+    F mRun;
+    ValueFlowPassAdaptor(const char* pname, bool pcpp, F prun) : ValueFlowPass(), mName(pname), mCPP(pcpp), mRun(prun) {}
+    const char* name() const override {
+        return mName;
+    }
+    void run(const ValueFlowState& state) const override
+    {
+        mRun(state.tokenlist, state.symboldatabase, state.errorLogger, state.settings, state.skippedFunctions);
+    }
+    bool cpp() const override {
+        return mCPP;
+    }
+}",1,,7189,,,187,,ValueFlowPassAdaptor
+180388626575,TYPE_REF,-1,,"struct ConditionState {
+        bool dependent = true;
+        bool unknown = true;
+
+        bool isUnknownDependent() const {
+            return unknown && dependent;
+        }
+    }",5,,96,,,11,,ValueFlowAnalyzer.ConditionState
+180388626576,TYPE_REF,-1,,"struct Iterator {
+            using iterator_category = std::forward_iterator_tag;
+            using value_type = const ValueFlow::Value;
+            using pointer = value_type *;
+            using reference = value_type &;
+            using difference_type = std::ptrdiff_t;
+
+            explicit Iterator(const M::const_iterator & it)
+                : mIt(it) {}
+
+            reference operator*() const {
+                return mIt->second;
+            }
+
+            pointer operator->() const {
+                return &mIt->second;
+            }
+
+            Iterator &operator++() {
+                // cppcheck-suppress postfixOperator - forward iterator needs to perform post-increment
+                mIt++;
+                return *this;
+            }
+
+            friend bool operator==(const Iterator &a, const Iterator &b) {
+                return a.mIt == b.mIt;
+            }
+
+            friend bool operator!=(const Iterator &a, const Iterator &b) {
+                return a.mIt !=...",9,,870,,,2,,MultiValueFlowAnalyzer.SelectValueFromVarIdMapRange.Iterator
+180388626577,TYPE_REF,-1,,"class SelectValueFromVarIdMapRange {
+        using M = std::unordered_map<nonneg int, ValueFlow::Value>;
+
+        struct Iterator {
+            using iterator_category = std::forward_iterator_tag;
+            using value_type = const ValueFlow::Value;
+            using pointer = value_type *;
+            using reference = value_type &;
+            using difference_type = std::ptrdiff_t;
+
+            explicit Iterator(const M::const_iterator & it)
+                : mIt(it) {}
+
+            reference operator*() const {
+                return mIt->second;
+            }
+
+            pointer operator->() const {
+                return &mIt->second;
+            }
+
+            Iterator &operator++() {
+                // cppcheck-suppress postfixOperator - forward iterator needs to perform post-increment
+                mIt++;
+                return *this;
+            }
+
+            friend bool operator==(const Iterator &a, const Iterator &b) {
+                return a.mIt == b.mIt;
+       ...",5,,867,,,1,,MultiValueFlowAnalyzer.SelectValueFromVarIdMapRange
+180388626578,TYPE_REF,-1,,"struct SingleRange {
+        T* x;
+        T* begin() const {
+            return x;
+        }
+        T* end() const {
+            return x+1;
+        }
+    }",5,,1112,,,12,,SingleValueFlowAnalyzer.SingleRange
+180388626579,TYPE_REF,1,,"struct ValueFlowAnalyzer : Analyzer {
+    const Settings& settings;
+    ProgramMemoryState pms;
+
+    explicit ValueFlowAnalyzer(const Settings& s) : settings(s), pms(settings) {}
+
+    virtual const ValueFlow::Value* getValue(const Token* tok) const = 0;
+    virtual ValueFlow::Value* getValue(const Token* tok) = 0;
+
+    virtual void makeConditional() = 0;
+
+    virtual void addErrorPath(const Token* tok, const std::string& s) = 0;
+
+    virtual bool match(const Token* tok) const = 0;
+
+    virtual bool internalMatch(const Token* /*tok*/) const {
+        return false;
+    }
+
+    virtual bool isAlias(const Token* tok, bool& inconclusive) const = 0;
+
+    using ProgramState = ProgramMemory::Map;
+
+    virtual ProgramState getProgramState() const = 0;
+
+    virtual int getIndirect(const Token* tok) const {
+        const ValueFlow::Value* value = getValue(tok);
+        if (value)
+            return value->indirect;
+        return 0;
+    }
+
+    virtual bool isGlobal() const {
+        return fals...",1,,50,,,1,,ValueFlowAnalyzer
+180388626580,TYPE_REF,5,,"struct MultiValueFlowAnalyzer : ValueFlowAnalyzer {
+    class SelectValueFromVarIdMapRange {
+        using M = std::unordered_map<nonneg int, ValueFlow::Value>;
+
+        struct Iterator {
+            using iterator_category = std::forward_iterator_tag;
+            using value_type = const ValueFlow::Value;
+            using pointer = value_type *;
+            using reference = value_type &;
+            using difference_type = std::ptrdiff_t;
+
+            explicit Iterator(const M::const_iterator & it)
+                : mIt(it) {}
+
+            reference operator*() const {
+                return mIt->second;
+            }
+
+            pointer operator->() const {
+                return &mIt->second;
+            }
+
+            Iterator &operator++() {
+                // cppcheck-suppress postfixOperator - forward iterator needs to perform post-increment
+                mIt++;
+                return *this;
+            }
+
+            friend bool operator==(const Iterator &a, const Itera...",1,,866,,,5,,MultiValueFlowAnalyzer
+180388626581,TYPE_REF,7,,"struct SingleValueFlowAnalyzer : ValueFlowAnalyzer {
+    std::unordered_map<nonneg int, const Variable*> varids;
+    std::unordered_map<nonneg int, const Variable*> aliases;
+    ValueFlow::Value value;
+
+    SingleValueFlowAnalyzer(ValueFlow::Value v, const Settings& s) : ValueFlowAnalyzer(s), value(std::move(v)) {}
+
+    const std::unordered_map<nonneg int, const Variable*>& getVars() const {
+        return varids;
+    }
+
+    const std::unordered_map<nonneg int, const Variable*>& getAliasedVars() const {
+        return aliases;
+    }
+
+    const ValueFlow::Value* getValue(const Token* /*tok*/) const override {
+        return &value;
+    }
+    ValueFlow::Value* getValue(const Token* /*tok*/) override {
+        return &value;
+    }
+
+    void makeConditional() override {
+        value.conditional = true;
+    }
+
+    bool useSymbolicValues() const override
+    {
+        if (value.isUninitValue())
+            return false;
+        if (value.isLifetimeValue())
+            return false;
+     ...",1,,1072,,,7,,SingleValueFlowAnalyzer
+180388626582,TYPE_REF,8,,"struct ExpressionAnalyzer : SingleValueFlowAnalyzer {
+    const Token* expr;
+    bool local = true;
+    bool unknown{};
+    bool dependOnThis{};
+    bool uniqueExprId{};
+
+    ExpressionAnalyzer(const Token* e, ValueFlow::Value val, const Settings& s)
+        : SingleValueFlowAnalyzer(std::move(val), s),
+        expr(e)
+    {
+
+        assert(e && e->exprId() != 0 && ""Not a valid expression"");
+        dependOnThis = exprDependsOnThis(expr);
+        setupExprVarIds(expr);
+        if (value.isSymbolicValue()) {
+            dependOnThis |= exprDependsOnThis(value.tokvalue);
+            setupExprVarIds(value.tokvalue);
+        }
+        uniqueExprId =
+            expr->isUniqueExprId() && (Token::Match(expr, ""%cop%"") || !isVariableChanged(expr, 0, s));
+    }
+
+    static bool nonLocal(const Variable* var, bool deref) {
+        return !var || (!var->isLocal() && !var->isArgument()) || (deref && var->isArgument() && var->isPointer()) ||
+               var->isStatic() || var->isReference() ||...",1,,1219,,,8,,ExpressionAnalyzer
+180388626583,TYPE_REF,9,,"struct SameExpressionAnalyzer : ExpressionAnalyzer {
+    SameExpressionAnalyzer(const Token* e, ValueFlow::Value val, const Settings& s)
+        : ExpressionAnalyzer(e, std::move(val), s)
+    {}
+
+    bool skipUniqueExprIds() const override {
+        return false;
+    }
+
+    bool match(const Token* tok) const override
+    {
+        return isSameExpression(true, expr, tok, getSettings(), true, true);
+    }
+}",1,,1329,,,9,,SameExpressionAnalyzer
+180388626584,TYPE_REF,11,,"struct OppositeExpressionAnalyzer : ExpressionAnalyzer {
+    bool isNot{};
+
+    OppositeExpressionAnalyzer(bool pIsNot, const Token* e, ValueFlow::Value val, const Settings& s)
+        : ExpressionAnalyzer(e, std::move(val), s), isNot(pIsNot)
+    {}
+
+    bool skipUniqueExprIds() const override {
+        return false;
+    }
+
+    bool match(const Token* tok) const override {
+        return isOppositeCond(isNot, expr, tok, getSettings(), true, true);
+    }
+}",1,,1349,,,11,,OppositeExpressionAnalyzer
+180388626585,TYPE_REF,13,,"struct SubExpressionAnalyzer : ExpressionAnalyzer {
+    using PartialReadContainer = std::vector<std::pair<Token *, ValueFlow::Value>>;
+    // A shared_ptr is used so partial reads can be captured even after forking
+    std::shared_ptr<PartialReadContainer> partialReads;
+
+    SubExpressionAnalyzer(const Token* e, ValueFlow::Value val, const Settings& s)
+        : ExpressionAnalyzer(e, std::move(val), s), partialReads(std::make_shared<PartialReadContainer>())
+    {}
+
+    SubExpressionAnalyzer(const Token* e, ValueFlow::Value val, const std::shared_ptr<PartialReadContainer>& p, const Settings& s)
+        : ExpressionAnalyzer(e, std::move(val), s), partialReads(p)
+    {}
+
+    virtual bool submatch(const Token* tok, bool exact = true) const = 0;
+
+    bool isAlias(const Token* tok, bool& inconclusive) const override
+    {
+        if (tok->exprId() == expr->exprId() && tok->astParent() && submatch(tok->astParent(), false))
+            return false;
+        return ExpressionAnalyzer::isAli...",1,,1370,,,13,,SubExpressionAnalyzer
+180388626586,TYPE_REF,14,,"struct MemberExpressionAnalyzer : SubExpressionAnalyzer {
+    std::string varname;
+
+    MemberExpressionAnalyzer(std::string varname, const Token* e, ValueFlow::Value val, const std::shared_ptr<PartialReadContainer>& p, const Settings& s)
+        : SubExpressionAnalyzer(e, std::move(val), p, s), varname(std::move(varname))
+    {}
+
+    bool submatch(const Token* tok, bool exact) const override
+    {
+        if (!Token::Match(tok, "". %var%""))
+            return false;
+        if (!exact)
+            return true;
+        return tok->strAt(1) == varname;
+    }
+}",1,,1411,,,14,,MemberExpressionAnalyzer
+180388626587,TYPE_REF,16,,"struct ContainerExpressionAnalyzer : ExpressionAnalyzer {
+    ContainerExpressionAnalyzer(const Token* expr, ValueFlow::Value val, const Settings& s)
+        : ExpressionAnalyzer(expr, std::move(val), s)
+    {}
+
+    bool match(const Token* tok) const override {
+        return tok->exprId() == expr->exprId() || (astIsIterator(tok) && isAliasOf(tok, expr->exprId()));
+    }
+
+    Action isWritable(const Token* tok, Direction /*d*/) const override
+    {
+        if (astIsIterator(tok))
+            return Action::None;
+        if (!getValue(tok))
+            return Action::None;
+        if (!tok->valueType())
+            return Action::None;
+        if (!astIsContainer(tok))
+            return Action::None;
+        const Token* parent = tok->astParent();
+        const Library::Container* container = getLibraryContainer(tok);
+
+        if (container->stdStringLike && Token::simpleMatch(parent, ""+="") && astIsLHS(tok) && parent->astOperand2()) {
+            const Token* rhs = parent->astOperan...",1,,1433,,,16,,ContainerExpressionAnalyzer
+180388626588,TYPE_REF,1,,"class DummyErrorLogger : public ErrorLogger {
+public:
+    void reportOut(const std::string& /*outmsg*/, Color /*c*/) override {}
+    void reportErr(const ErrorMessage& /*msg*/) override {}
+    void reportProgress(const std::string& /*filename*/,
+                        const char /*stage*/[],
+                        const std::size_t /*value*/) override {}
+}",1,,39,,,1,,DummyErrorLogger
+180388626589,TYPE_REF,1,,"class C
+{
+public:
+    explicit C(std::string s)
+    : _s(s)
+    {
+    }
+    void foo();
+private:
+    std::string _s;
+}",1,,1,,,1,,C
+180388626590,TYPE_REF,1,,"class C
+{
+public:
+    explicit C(std::string s)
+    : _s(std::move(s))
+    {
+    }
+    void foo();
+private:
+    std::string _s;
+}",1,,1,,,1,,C
+180388626591,TYPE_REF,9,,"enum ClType : std::uint8_t { Compile, Include, Precompile }",1,,250,,,9,,ClType
